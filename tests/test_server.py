@@ -86,7 +86,7 @@ class Base(unittest.TestCase):
 
     def call(self, method: str, path: str, body=None, headers=None, raw: bytes | None = None) -> Answer:
         c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=30)
-        h = {"Host": self.host}
+        h = {"Host": self.host, "Cookie": f"rt_local={self.app.local_key()}"}  # what the start file's link sets
         if method == "POST":
             h.update({"Content-Type": "application/json", "X-RT": "1", "Origin": f"http://{self.host}"})
         h.update(headers or {})
@@ -162,9 +162,28 @@ class GuardTests(Base):
             self.assertEqual((r.status, r.body["code"]), (403, "need_link"))
             page = self.get("/")
             self.assertEqual(page.status, 403)
-            self.assertIn("only answers on this computer", page.body)
+            self.assertIn("only answers on the computer it runs on", page.body)
             self.assertEqual(self.post("/api/clients/add", {"username": "acme_jane"}).status, 403)
         self.assertEqual(self.get("/api/status").status, 200)
+
+    def test_other_accounts_and_programs_on_this_computer_need_its_key(self):
+        key = self.app.local_key()
+        self.assertGreaterEqual(len(key), 24)
+        for cookie in (None, "rt_local=wrong", f"rt_key={key}"):
+            r = self.get("/api/status", headers={"Cookie": cookie})
+            self.assertEqual((r.status, r.body["code"]), (403, "need_link"), cookie)
+            self.assertEqual(self.post("/api/sheets/update", headers={"Cookie": cookie}).status, 403, cookie)
+            self.assertEqual(self.get("/api/export.csv?client=x&tab=content", headers={"Cookie": cookie}).status, 403)
+            self.assertEqual(self.get("/oauth?code=x&state=y", headers={"Cookie": cookie}).status, 403)
+        page = self.get("/", headers={"Cookie": None})
+        self.assertEqual(page.status, 403)
+        self.assertIn("start file", page.body)
+        self.assertEqual(self.get("/api/ping", headers={"Cookie": None}).status, 200)  # the start files ask this
+        self.assertEqual(self.get("/?key=wrong", headers={"Cookie": None}).status, 403)
+        r = self.get(f"/?key={key}", headers={"Cookie": None})
+        self.assertEqual((r.status, r.headers["Location"]), (302, "/"))
+        self.assertEqual(r.headers["Set-Cookie"], f"rt_local={key}; HttpOnly; SameSite=Lax; Max-Age=31536000; Path=/")
+        self.assertEqual(self.app.local_link(), f"http://127.0.0.1:{self.port}/?key={key}")
 
     def test_loopback_peer_with_a_foreign_host_is_refused(self):
         for host in ("evil.example", f"evil.example:{self.port}", "127.0.0.1", f"127.0.0.1:{self.port + 1}",
@@ -176,7 +195,7 @@ class GuardTests(Base):
             self.assertEqual(self.get("/api/status", headers={"Host": host}).status, 200, host)
 
     def test_posts_only_from_the_page_itself(self):
-        good = {"rev": "", "username": "acme_jane"}
+        good = {"rev": self.status()["rev"], "username": "acme_jane"}
         self.assertEqual(self.post("/api/clients/add", good, headers={"X-RT": None}).status, 403)
         self.assertEqual(self.post("/api/clients/add", good, headers={"X-RT": "yes"}).status, 403)
         self.assertEqual(self.post("/api/clients/add", good, headers={"Content-Type": "text/plain"}).status, 403)
@@ -196,7 +215,8 @@ class GuardTests(Base):
                                                               "files at a time."))
         c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
         c.putrequest("POST", "/api/files/preview", skip_host=True)
-        for k, v in (("Host", self.host), ("Content-Type", "application/json"), ("X-RT", "1")):
+        for k, v in (("Host", self.host), ("Content-Type", "application/json"), ("X-RT", "1"),
+                     ("Cookie", f"rt_local={self.app.local_key()}")):
             c.putheader(k, v)
         c.endheaders()
         self.assertEqual(c.getresponse().status, 411)
@@ -284,9 +304,9 @@ class NetworkTests(Base):
         self.assertEqual(len(key), 12)
         r = self.lan("/api/status")
         self.assertEqual((r.status, r.body["code"]), (403, "need_link"))
-        script = paths.app_dir() / "reddit_tracker.py"
-        self.assertIn(f'On the computer where Reddit Tracker runs, run: python3 "{script}" --show-link --port '
-                      f'{self.port} --data "{self.data}". Or copy it', r.body["error"])  # a command that works
+        self.assertIn("start it with --show-link to see it", r.body["error"])
+        self.assertNotIn(str(self.data), r.body["error"])  # never where its files are: this may be anyone here
+        self.assertNotIn(str(paths.app_dir()), r.body["error"])
         self.assertIn("ends in ?key=", self.lan("/").body)
         self.assertEqual(self.lan("/?key=wrong").status, 403)
         self.assertEqual(self.lan("/api/status", cookie="wrong").status, 403)
@@ -389,6 +409,7 @@ class RouteTests(Base):
         self.assertEqual(link[:3], ("https", "datastudio.google.com", "/reporting/create"))
         q = dict(urllib.parse.parse_qsl(link.query))
         self.assertEqual(q, {"c.reportId": REPORT_TEMPLATE, "r.reportName": "Acme Jane | Reddit organic report",
+                             "r.keepMeasurementId": "false",
                              "ds.*.connector": "googleSheets", "ds.*.spreadsheetId": c["sheet"]["id"],
                              "ds.*.worksheetId": q["ds.*.worksheetId"], "ds.*.hasHeader": "true",
                              "ds.*.refreshFields": "false"})

@@ -263,6 +263,7 @@ class Google:
         self.test_mode = bool(base)
         self.auth_url = base + "/o/oauth2/v2/auth" if base else "https://accounts.google.com/o/oauth2/v2/auth"
         self.token_url = base + "/token" if base else "https://oauth2.googleapis.com/token"
+        self.revoke_url = base + "/revoke" if base else "https://oauth2.googleapis.com/revoke"
         self.sheets_url = base + "/v4/spreadsheets" if base else "https://sheets.googleapis.com/v4/spreadsheets"
         self.drive_url = base + "/drive/v3" if base else "https://www.googleapis.com/drive/v3"
         handlers = [urllib.request.HTTPSHandler(context=ssl_context())]
@@ -337,6 +338,22 @@ class Google:
                 self.token_path.unlink()
             except FileNotFoundError:
                 pass
+
+    def remove_access(self) -> bool:
+        """"Sign out and remove Google access": ask Google to cancel this sign-in for good, then sign out here.
+        True when Google confirmed it (False: offline, or nothing to cancel; signed out here either way)."""
+        with self._token_lock:
+            token = self._read_token() or {}
+            secret = token.get("refresh_token") or token.get("access_token")
+            done = False
+            if secret and not token.get("signed_out"):
+                try:
+                    self._send("POST", self.revoke_url, form={"token": secret})
+                    done = True
+                except GoogleError:
+                    done = False
+            self.sign_out()
+            return done
 
     def access_token(self, force: bool = False) -> str:
         """A working access token, refreshed when it has under a minute left (or when force is set)."""
@@ -482,7 +499,7 @@ class Google:
             return None
         for e in picks:
             del self._pending[e["state"]]
-        return picks[-1]
+        return {**picks[-1], "lone": True}
 
     def _remember(self, done: dict, outcome, entry: dict) -> None:
         """Keep how an answer went (None: it failed unexpectedly) and tell anyone waiting on a repeat."""
@@ -540,6 +557,10 @@ class Google:
             old = self._read_token() or {}
             same = bool(old.get("permission_id")) and old.get("permission_id") == me["permission_id"]
             other = bool(old.get("permission_id")) and not same
+            if entry.get("lone") and (not same or old.get("signed_out")):
+                # an answer without its check is taken only from the account already signed in here, so
+                # nobody can slip in another account through it
+                raise GoogleError("bad_state")
             if pick and other and not old.get("signed_out"):  # signed out: choosing a Sheet signs in as well
                 raise GoogleError("wrong_account", MESSAGES["wrong_account"].format(
                     new=me["email"] or me["name"] or "another account",

@@ -40,7 +40,8 @@ DEFAULT_PORT = 8765
 MAX_BODY = 40_000_000
 MAX_FILES = 200
 LOG_BYTES = 1_000_000
-COOKIE = "rt_key"
+COOKIE = "rt_key"  # other devices (--network)
+LOCAL_COOKIE = "rt_local"  # this computer's own browser
 PAGE = Path(__file__).with_name("page.html")
 FONTS = {f"/fonts/{name}.woff2": Path(__file__).with_name("fonts") / f"{name}.woff2" for name in ("montserrat", "opensans")}
 # The Data Studio report a client's "Connect a Data Studio report" copies, unless Settings names another
@@ -100,6 +101,10 @@ def peer_is_loopback(handler: BaseHTTPRequestHandler) -> bool:
         return False
 
 
+def same_key(got: str | None, key: str | None) -> bool:
+    return bool(got and key) and hmac.compare_digest(got.encode("utf-8"), key.encode("utf-8"))
+
+
 def lan_hosts() -> list[str]:
     """This computer's name on the local network (name.local) and its network address."""
     name = socket.gethostname().split(".")[0]
@@ -115,10 +120,10 @@ def lan_hosts() -> list[str]:
     return hosts
 
 
-def key_in_backup(path: str | None) -> str | None:
-    """The access key in a settings backup (used while settings.json is damaged)."""
+def key_in_backup(path: str | None, name: str = "access_key") -> str | None:
+    """A key in a settings backup (used while settings.json is damaged)."""
     try:
-        return json.loads(Path(path).read_text(encoding="utf-8"))["options"]["access_key"] if path else None
+        return json.loads(Path(path).read_text(encoding="utf-8"))["options"][name] if path else None
     except (OSError, ValueError, KeyError, TypeError):
         return None
 
@@ -159,6 +164,7 @@ def report_link(template: str, sheet_id: str, content_tab: int, client_name: str
     The copy is made (and owned) by whoever opens it, with their own Google access to the Sheet."""
     query = urllib.parse.urlencode([
         ("c.reportId", template), ("r.reportName", f"{client_name} | Reddit organic report"),
+        ("r.keepMeasurementId", "false"),  # never the template's Google Analytics: nobody else sees the copy's use
         ("ds.*.connector", "googleSheets"), ("ds.*.spreadsheetId", sheet_id),
         ("ds.*.worksheetId", str(content_tab)), ("ds.*.hasHeader", "true"), ("ds.*.refreshFields", "false")])
     return "https://datastudio.google.com/reporting/create?" + query
@@ -252,9 +258,10 @@ class App:
         self.google = google or Google(self.data, paths.find_google_app_file(self.data), log=self.log)
         self.job = SheetsJob(self.data / "sheets_status.json", self.db_lock, self.build_targets, self.google,
                              self.log, **({"timer": timer} if timer else {}))
-        self._key = None
+        self._key = self._local = None
         if network:
             self.access_key()
+        self.local_key()
 
     # ---------------------------------------------------------------- basics
 
@@ -292,6 +299,20 @@ class App:
             key = self._key or key_in_backup(e.backup)
         self._key = key
         return key
+
+    def local_key(self) -> str | None:
+        """The key in the link this computer's browser opens (made on the first start). While settings.json
+        is damaged: the last one known, or the one in its backup."""
+        try:
+            key = self.settings.option("local_key") or self.settings.new_local_key()
+        except SettingsError as e:
+            key = self._local or key_in_backup(e.backup, "local_key")
+        self._local = key
+        return key
+
+    def local_link(self) -> str:
+        key = self.local_key()
+        return f"http://127.0.0.1:{self.port}/" + (f"?key={key}" if key else "")
 
     def links(self) -> list[str]:
         key = self.access_key() if self.network else None
@@ -470,6 +491,9 @@ class App:
     def sign_out(self, body: dict) -> dict:
         self.google.sign_out()
         return {"ok": True}
+
+    def remove_access(self, body: dict) -> dict:
+        return {"ok": True, "revoked": self.google.remove_access()}
 
     # ---------------------------------------------------------------- clients
 
@@ -670,6 +694,7 @@ class App:
 
 ROUTES = {"/api/files/preview": App.preview, "/api/files/import": App.import_files, "/api/google/begin": App.begin,
           "/api/google/finish": App.finish_pasted, "/api/google/signout": App.sign_out,
+          "/api/google/remove-access": App.remove_access,
           "/api/clients/add": App.add_client, "/api/clients/update": App.update_client, "/api/clients/pause": App.pause,
           "/api/clients/remove": App.remove, "/api/sheets/new": App.new_sheet, "/api/sheets/stop": App.stop_sheet,
           "/api/sheets/update": App.update_now, "/api/sheets/check": App.check_sheet,
@@ -722,19 +747,19 @@ class Handler(BaseHTTPRequestHandler):
         hosts = [f"{name}:{port}" for name in names] + (list(names) if port == 80 else [])  # browsers drop :80
         return peer_is_loopback(self) and self.headers.get("Host", "") in hosts
 
-    def cookie(self) -> str:
+    def cookie(self, wanted: str = COOKIE) -> str:
         for part in (self.headers.get("Cookie") or "").split(";"):
             name, _, value = part.strip().partition("=")
-            if name == COOKIE:
+            if name == wanted:
                 return value
         return ""
 
     def allowed(self) -> bool:
-        if self.is_local:
+        """This computer's browser with its key (other accounts and programs here don't have it), or another
+        device with the --network key."""
+        if self.is_local and same_key(self.cookie(LOCAL_COOKIE), self.app.local_key()):
             return True
-        key = self.app.access_key() if self.app.network else None
-        got = self.cookie()
-        return bool(key and got) and hmac.compare_digest(got.encode("utf-8"), key.encode("utf-8"))
+        return bool(self.app.network) and same_key(self.cookie(), self.app.access_key())
 
     # ---------------------------------------------------------------- answers
 
@@ -770,21 +795,23 @@ class Handler(BaseHTTPRequestHandler):
         self.json({"error": e.message, "code": e.code, "field": getattr(e, "field", None)}, status)
 
     def need_link(self, as_page: bool = False) -> None:
-        if self.app.network:
-            options = ["--show-link"] + ([] if self.app.port == DEFAULT_PORT else ["--port", str(self.app.port)])
-            if self.app.data != paths.default_data_dir():
-                options += ["--data", f'"{self.app.data}"']
+        if self.is_local:
+            text = ("Open Reddit Tracker with its start file (for example start-mac.command or start-windows.bat): "
+                    "it opens the page with this computer's key. Other accounts and programs on this computer "
+                    "can't use it.")
+        elif self.app.network:  # never the app's or data folder's place: this caller may be anyone on the network
             text = ("This device needs the Reddit Tracker link (it ends in ?key=…). On the computer where Reddit "
-                    f"Tracker runs, run: {run_command(*options)}. Or copy it from Settings → Use from other devices "
-                    "on a device that already works.")
+                    "Tracker runs, start it with --show-link to see it. Or copy it from Settings → Use from other "
+                    "devices on a device that already works.")
         else:
-            text = f"Reddit Tracker only answers on this computer. Open http://127.0.0.1:{self.server.server_address[1]}"
+            text = "Reddit Tracker only answers on the computer it runs on."
         if as_page:
             return self.page(403, "Needs the link", f"<h1>This device needs the link</h1><p>{text_html(text)}</p>")
         self.json({"error": text, "code": "need_link"}, 403)
 
-    def key_cookie(self) -> tuple:
-        return (("Set-Cookie", f"{COOKIE}={self.app.access_key()}; HttpOnly; SameSite=Lax; Max-Age=31536000; Path=/"),)
+    def key_cookie(self, name: str = COOKIE, key: str | None = None) -> tuple:
+        key = key or self.app.access_key()
+        return (("Set-Cookie", f"{name}={key}; HttpOnly; SameSite=Lax; Max-Age=31536000; Path=/"),)
 
     def log_request(self, code="-", size="-") -> None:
         path = (getattr(self, "path", "") or "").split("?", 1)[0]
@@ -813,10 +840,12 @@ class Handler(BaseHTTPRequestHandler):
         path, _, query = self.path.partition("?")
         params = urllib.parse.parse_qs(query)
         self.is_local = self.local()
-        if path == "/oauth":
-            return self.oauth(query) if self.is_local else self.need_link(as_page=True)
+        if path == "/oauth":  # Google sends back the same browser, which has this computer's key
+            return self.oauth(query) if self.is_local and self.allowed() else self.need_link(as_page=True)
         if path == "/" and "key" in params:
             return self.key_link(params["key"][0])
+        if path == "/api/ping":  # the start files ask whether it's already running
+            return self.json({"app": "reddit-tracker", "version": VERSION, "network": self.app.network})
         if not self.allowed():
             return self.need_link(as_page=path == "/")
         try:
@@ -827,8 +856,6 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, body, "text/html; charset=utf-8", () if self.is_local else self.key_cookie())
             if path in FONTS:
                 return self.send(200, FONTS[path].read_bytes(), "font/woff2")
-            if path == "/api/ping":
-                return self.json({"app": "reddit-tracker", "version": VERSION, "network": self.app.network})
             if path == "/api/status":
                 return self.json(self.app.status(remote=not self.is_local))
             if path == "/api/export.csv":
@@ -844,8 +871,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def key_link(self, key: str) -> None:
         """The link for other devices: the right key sets the cookie and goes to the page."""
-        app_key = self.app.access_key() if self.app.network else None
-        if app_key and hmac.compare_digest(key.encode("utf-8"), app_key.encode("utf-8")):
+        if self.is_local and same_key(key, self.app.local_key()):
+            return self.send(302, b"", "text/plain",
+                             (("Location", "/"),) + self.key_cookie(LOCAL_COOKIE, self.app.local_key()))
+        if self.app.network and same_key(key, self.app.access_key()):
             return self.send(302, b"", "text/plain", (("Location", "/"),) + self.key_cookie())
         if self.allowed():  # this computer, or a device that still has a working key (an old bookmark)
             return self.send(302, b"", "text/plain", (("Location", "/"),))
@@ -964,9 +993,15 @@ def ping(port: int, tries: int = 1) -> dict | None:
     return None
 
 
-def already_running(args, port: int, answer: dict) -> int:
+def already_running(args, port: int, answer: dict, data: Path | None = None) -> int:
     """Reddit Tracker already answers on this port: open it (0), or say why this start can't work (3)."""
     url = f"http://127.0.0.1:{port}"
+    key = None
+    if data is not None:
+        try:
+            key = Settings(data / "settings.json", data / "backups").option("local_key")
+        except SettingsError as e:
+            key = key_in_backup(e.backup, "local_key")
     if args.network and not answer.get("network"):
         say("Reddit Tracker is already open on this computer, but only for this computer. Close that window, "
             "then start it again.")
@@ -975,7 +1010,7 @@ def already_running(args, port: int, answer: dict) -> int:
         say(f"Reddit Tracker is already running: {url}")
     else:
         say(f"Reddit Tracker is already running. Opening it: {url}")
-        webbrowser.open(url)
+        webbrowser.open(f"{url}/?key={key}" if key else url)
     return 0
 
 
@@ -994,11 +1029,22 @@ def show_link(data: Path, port: int) -> int:
     return 0
 
 
+def on_screen() -> bool:
+    """Printing to a window someone is looking at (not a system log such as the Raspberry Pi's journal)."""
+    try:
+        return sys.stdout.isatty()
+    except (AttributeError, ValueError):
+        return False
+
+
 def banner(app: App) -> None:
-    lines = ["", f"Reddit Tracker {VERSION} is running.", f"Open it in your browser: http://127.0.0.1:{app.port}"]
+    shown = on_screen()  # a key printed into a system log could be read by others: there, it's left out
+    lines = ["", f"Reddit Tracker {VERSION} is running.",
+             f"Open it in your browser: {app.local_link() if shown else f'http://127.0.0.1:{app.port}'}"]
     if app.network:
         lines += ["On your phone or another computer on the same network, open (keep this link private):"]
-        lines += [f"  {link}" for link in app.links()]
+        lines += [f"  {link}" if shown else f"  {link.split('?', 1)[0]}?key=… (run with --show-link to see it)"
+                  for link in app.links()]
     if app.google.test_mode:
         lines.append("TEST MODE: Google is simulated on this computer. Nothing goes to the real Google.")
     lines += [f"Your data folder: {app.data}", "Keep this window open while you use Reddit Tracker. Close it to stop.",
@@ -1036,7 +1082,7 @@ def main(args, on_ready=None) -> int:
         for p in range(port, port + (1 if args.network or args.port else 11)):  # a fixed port, or the next free one
             answer = ping(p)
             if answer:
-                return already_running(args, p, answer)
+                return already_running(args, p, answer, data)
             try:
                 app = app or App(data, network=args.network)
                 server = create(app, p)
@@ -1047,14 +1093,14 @@ def main(args, on_ready=None) -> int:
             except sqlite3.Error as e:
                 answer = "locked" in str(e) and ping(p, tries=12)  # another copy starting at the same moment
                 if answer:
-                    return already_running(args, p, answer)
+                    return already_running(args, p, answer, data)
                 say(f"Reddit Tracker didn't start. {CANT_SAVE} Its data folder: {data}" if engine.unwritable(e) else
                     f"Reddit Tracker didn't start: its database in {data} can't be opened ({e}).")
                 return 1
             except OSError:
                 answer = ping(p, tries=2)  # taken a moment ago by another copy starting at the same moment?
                 if answer:
-                    return already_running(args, p, answer)
+                    return already_running(args, p, answer, data)
         if server is None:
             say(f"Reddit Tracker didn't start: another program is using port {port}. Close that program, or start "
                 f"Reddit Tracker with another port, for example: {run_command('--port', str(port + 20))}")
@@ -1070,7 +1116,7 @@ def main(args, on_ready=None) -> int:
                 app.log(f"The Google Sheets update couldn't start: {type(e).__name__}")
         threading.Thread(target=resume, daemon=True).start()
         if not (args.no_browser or args.network):
-            threading.Timer(0.5, webbrowser.open, [f"http://127.0.0.1:{app.port}"]).start()
+            threading.Timer(0.5, webbrowser.open, [app.local_link()]).start()
         if on_ready:
             on_ready(server)
         if threading.current_thread() is threading.main_thread():  # systemd's stop: close up like Ctrl+C

@@ -96,6 +96,18 @@ def name_route(filename: str, clients: list[dict]) -> tuple[str, object]:
     return "unknown", None
 
 
+def _fold(username: str) -> str:
+    return username.lower().replace("-", "_")
+
+
+def near_username(username: str, clients: list[dict]) -> dict | None:
+    """The one client whose username differs from this one only by - versus _ (an easy slip when typing it):
+    a different account to Reddit, so it's only ever offered, never assumed."""
+    found = [c for c in clients if c.get("reddit_username") and c["reddit_username"].lower() != username.lower()
+             and _fold(c["reddit_username"]) == _fold(username)]
+    return found[0] if len(found) == 1 else None
+
+
 def file_day(modified: int | None, today: dt.date) -> str:
     """The day a file was downloaded (the browser's modified time): an empty report has no dates."""
     if modified and modified > 1e12:
@@ -175,7 +187,7 @@ def keep_copy(text: str, username: str, kind: str, uploads_dir: Path) -> str | N
 def _blank(f: dict) -> dict:
     return {"id": f["id"], "name": f["name"], "status": None, "import": False, "client": None, "client_name": None,
             "username": None, "report": None, "export_day": None, "rows": None, "summary": None, "message": None,
-            "warnings": [], "evidence": None, "guess": None, "new_username": None, "paused_client": None,
+            "warnings": [], "evidence": None, "guess": None, "new_username": None, "near_client": None, "paused_client": None,
             "against": None}
 
 
@@ -216,6 +228,11 @@ def plan_files(con: sqlite3.Connection, clients: list[dict], files: list[dict], 
             continue
         if how == "new_client":  # another Reddit account's file: never stored under an existing client
             r.update(status="new_client", new_username=who, message=f"u/{who} isn't one of your clients yet.")
+            near = near_username(who, active)
+            if near:  # e.g. saved as Acme-Jane, but Reddit's file says Acme_Jane
+                r.update(near_client=near["id"],
+                         message=f"{near['name']} is saved as u/{near['reddit_username']}, but Reddit's file says "
+                                 f"u/{who}. If it's the same account, fix the username.")
             continue
         digest = hashlib.sha1(f["text"].encode("utf-8")).hexdigest()
         if rows and digest in seen:  # the same download twice ("… (1).csv"): only one is used. Empty

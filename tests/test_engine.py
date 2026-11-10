@@ -90,6 +90,14 @@ class NameRouting(EngineCase):
         f = self.one("Bolt Post Insights Report.csv", POSTS_CSV, client="c-2")
         self.assertEqual((f["status"], f["client"], f["client_name"], f["username"]), ("ready", "c-2", "Bolt", "bolt_bikes"))
 
+    def test_a_dash_for_an_underscore_is_offered_as_a_fix_never_assumed(self):
+        f = self.one("Acme-Jane Post Insights Report.csv", POSTS_CSV)
+        self.assertEqual((f["status"], f["new_username"], f["near_client"], f["client"]),
+                         ("new_client", "Acme-Jane", "c-1", None))
+        self.assertIn("Acme Jane is saved as u/Acme_Jane, but Reddit's file says u/Acme-Jane", f["message"])
+        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM pro_items").fetchone()[0], 0)
+        self.assertIsNone(self.one("Acme_Jane2 Post Insights Report.csv", POSTS_CSV)["near_client"])
+
     def test_a_strangers_account_file_never_touches_a_client(self):
         self.store_file("Acme_Jane Account Performance Report.csv", ACCOUNT_CSV, "c-1")
         newer = ACCOUNT_CSV.replace("120,5,10", "1,0,0").replace("130,6,11", "2,0,0") + "2026-10-09,3,0,0\n"

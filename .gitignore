@@ -15,3 +15,9 @@ dist/
 __pycache__/
 *.pyc
 .DS_Store
+# Reddit Pro downloads and other private files someone might leave in this folder
+*.csv
+*.zip
+*.db
+.env
+.env.*

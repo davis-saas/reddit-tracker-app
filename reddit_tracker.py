@@ -54,6 +54,7 @@ def quick_edit_off():
 
 if __name__ == "__main__":
     args = parse(sys.argv[1:])
+    os.umask(0o077)  # every file and folder it makes is readable by this computer account only
     quick_edit_off()
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from rt import server

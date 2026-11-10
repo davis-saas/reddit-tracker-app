@@ -30,7 +30,7 @@ cd ~ && curl -L -o reddit-tracker.zip https://github.com/davis-saas/reddit-track
 It prints a link. Open it on your laptop or phone and bookmark it. ([More about the Raspberry Pi](#raspberry-pi-details))
 
 Reddit Tracker opens in your browser. **Keep its small window open while you use it.** If the page doesn't
-open, go to <http://127.0.0.1:8765>.
+open, double-click the start file again.
 
 ## 3. Use it
 
@@ -72,12 +72,30 @@ client ([more](#a-ready-made-data-studio-report-for-each-client)).
 
 ## Privacy
 
-- **Everything stays on your computer:** your client list, your Google sign-in and every number.
-- **Your numbers go only to your own Google Sheets.** Nothing is sent anywhere else.
-- **The people who made this app see nothing.** There's no account, no tracking and no server of ours.
-- Google only lets Reddit Tracker open **the Sheets it makes and the ones you choose**. It can't see
-  anything else in your Google Drive.
-- To remove its access completely, go to [myaccount.google.com/permissions](https://myaccount.google.com/permissions).
+**What stays on your computer:** your client list, your Google sign-in, every number, and a copy of every report
+you drop in (in the data folder, until you delete it). Only your computer account can open that folder, and only
+your browser can open the app: it opens with a private key from the start file, so other accounts and programs
+on the same computer are turned away.
+
+**What goes to Google, and only to Google:** the numbers, post titles and client names that fill **your own**
+Google Sheets. Reddit Tracker can only open the Sheets it makes and the ones you choose, never anything else in
+your Google Drive.
+
+**What the people who made this app can see:** no names, no emails, no clients, no numbers. There's no account,
+no tracking and no server of ours. Two kinds of **totals** exist outside the app: Google shows us how many
+requests and sign-ins this app's Google key handles in total, and GitHub shows how many people visit or
+download this page. If you want no link to us at all, make your own Google key (about 15 minutes, see
+[For the person who publishes this app](#for-the-person-who-publishes-this-app)) and replace `google_app.json`.
+
+**Data Studio reports:** a copy made with **Connect a Data Studio report** belongs to you. It never keeps the
+template's Google Analytics, so nobody is told when you open it.
+
+**Phone or Raspberry Pi (network mode):** the link works on your home or office Wi-Fi and isn't encrypted, so
+don't use it on public Wi-Fi, and keep the link private: it's the key.
+
+**Signing out:** **Sign out** forgets the sign-in on this computer. **Sign out and remove access** also asks Google
+to cancel Reddit Tracker's permission. You can always remove it yourself at
+[myaccount.google.com/permissions](https://myaccount.google.com/permissions).
 
 ---
 
@@ -209,7 +227,7 @@ again. It replaces the app and restarts it; your data stays.
 |---|---|
 | "Reddit Tracker needs Python" | Install Python 3.9 or newer (see [Start it](#2-start-it)), then start it again. |
 | "…Python is too old" or "the system is too old" | Mac or Windows: install the newest Python from python.org. Linux: upgrade to a newer version of your Linux. Raspberry Pi: put the newest Raspberry Pi OS on the memory card with Raspberry Pi Imager. |
-| The page doesn't open | Open <http://127.0.0.1:8765> yourself. If another program uses that port, Reddit Tracker picks the next one and shows the address in its window. |
+| The page doesn't open, or says to use the start file | Double-click the start file again: it opens the page with this computer's key. Typing <http://127.0.0.1:8765> yourself only works in the browser that opened it before. If another program uses that port, Reddit Tracker picks the next one and shows the address in its window. |
 | "Reddit Tracker isn't answering" | Its window was closed or the computer slept. Start it again; your dropped files stay on the page. |
 | "Google isn't set up in this copy" | This copy has no `google_app.json`. Ask whoever gave you the app for a complete copy. |
 | "Google no longer accepts this copy of Reddit Tracker" | Download the newest Reddit Tracker and start it the same way. Your clients and numbers are kept. |

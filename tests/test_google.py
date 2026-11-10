@@ -274,6 +274,20 @@ class SignInTests(Base):
         params = self.fake.approve(self.google.begin("pick", target="c-2")["url"])
         self.raises("bad_state", self.google.finish, params)
 
+    def test_an_answer_without_state_is_only_taken_from_the_account_already_signed_in(self):
+        sheet = self.fake.make_sheet(granted=False)
+        self.fake.pick_ids, self.fake.omit_state = [sheet], True
+        params = self.fake.approve(self.google.begin("pick", target="c-1")["url"])
+        self.raises("bad_state", self.google.finish, params)  # nobody signed in here yet
+        self.assertFalse(self.google.status()["signed_in"])
+        self.fake.omit_state = False
+        self.sign_in()
+        self.fake.omit_state = True
+        self.fake.account = next(a for a in self.fake.accounts if a != self.fake.account)
+        params = self.fake.approve(self.google.begin("pick", target="c-1")["url"])
+        self.raises("bad_state", self.google.finish, params)
+        self.assertEqual(self.google.status()["email"], "jane@example.com")
+
     def test_choosing_again_after_closing_the_chooser_without_state(self):
         self.sign_in()
         sheet = self.fake.make_sheet(granted=False)
@@ -408,6 +422,21 @@ class TokenTests(Base):
         self.assertEqual((status["configured"], status["signed_in"], status["problem"]), (True, False, "rejected"))
         self.fake.sign_in(newer)
         self.assertEqual(newer.about()["email"], "jane@example.com")
+
+    def test_remove_access_cancels_the_sign_in_at_google(self):
+        self.sign_in()
+        self.assertTrue(self.google.remove_access())
+        self.assertEqual(self.fake.revokes, 1)
+        self.assertFalse(self.google.status()["signed_in"])
+        self.assertFalse(self.google.remove_access())  # nothing left to cancel
+        self.assertEqual(self.fake.revokes, 1)
+
+    def test_remove_access_signs_out_even_when_google_cant_be_reached(self):
+        self.sign_in()
+        self.fake.fail("/revoke", status=500, times=10)
+        self.assertFalse(self.google.remove_access())
+        self.assertFalse(self.google.status()["signed_in"])
+        self.assertNotIn("refresh_token", self.token())
 
     def test_sign_out_never_revokes(self):
         self.sign_in()

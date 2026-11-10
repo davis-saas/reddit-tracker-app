@@ -417,6 +417,13 @@ class Settings:
         self.set_option("access_key", key)
         return key
 
+    def new_local_key(self) -> str:
+        """Make the key this computer's own browser opens Reddit Tracker with (so other accounts and programs
+        on the same computer can't use it). 24 url-safe characters."""
+        key = secrets.token_urlsafe(18)
+        self.set_option("local_key", key)
+        return key
+
     def restore_last_saved(self) -> dict:
         """Put the last good copy back over a damaged settings file, keeping the damaged one in backups.
         Does nothing when the file reads fine. {"restored": backup path or None, "kept": path or None}."""

@@ -106,7 +106,7 @@ class Journey(unittest.TestCase):
 
     def call(self, method: str, path: str, body=None, headers=None):
         c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=30)
-        h = {"Host": self.host}
+        h = {"Host": self.host, "Cookie": self.local_cookie()}  # what opening the start file's link sets
         if method == "POST":
             h.update({"Content-Type": "application/json", "X-RT": "1", "Origin": f"http://{h['Host']}"})
         h.update(headers or {})
@@ -116,6 +116,9 @@ class Journey(unittest.TestCase):
         raw = r.read()
         c.close()
         return r.status, (json.loads(raw) if "json" in (r.getheader("Content-Type") or "") else raw.decode("utf-8")), r
+
+    def local_cookie(self) -> str:
+        return f"rt_local={Settings(self.data / 'settings.json', self.data / 'backups').option('local_key')}"
 
     def ok(self, path: str, body=None, **headers) -> dict:
         status, answer, _ = self.call("POST", path, body, headers)
@@ -130,6 +133,7 @@ class Journey(unittest.TestCase):
     def browse(self, url: str) -> str:
         """Open an address like a browser does (following Google's redirect back to /oauth)."""
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        opener.addheaders = [("Cookie", self.local_cookie())]  # the browser that opened the page has its key
         with opener.open(url, timeout=30) as r:
             return r.read().decode("utf-8")
 
@@ -300,7 +304,8 @@ class RemoteJourneyTests(Journey):
 
     def test_sign_in_by_pasting_and_the_wrong_account(self):
         self.key = Settings(self.data / "settings.json", self.data / "backups").option("access_key")
-        self.assertIn(f"/?key={self.key}", self.out.getvalue())  # the banner shows the link
+        self.assertNotIn(self.key, self.out.getvalue())  # not a window someone's looking at: the key stays out
+        self.assertIn("?key=… (run with --show-link to see it)", self.out.getvalue())
         key, self.key = self.key, "wrong-key"
         self.assertEqual(self.lan("GET", "/api/status")[0], 403)
         self.key = key

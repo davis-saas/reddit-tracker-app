@@ -25,11 +25,13 @@ def default_data_dir() -> Path:
 
 
 def data_dir(override: str | Path | None = None) -> Path:
-    """--data DIR, else $RT_DATA_DIR, else the per-user folder. Made on demand, private to this user."""
+    """--data DIR, else $RT_DATA_DIR, else the per-user folder. Made on demand, and kept private to this user
+    (only this computer account may open it), even when it already existed."""
     chosen = override or os.environ.get("RT_DATA_DIR")
     path = Path(chosen).expanduser() if chosen else default_data_dir()
     if not path.is_dir():
         path.mkdir(parents=True, exist_ok=True)
+    if os.name != "nt":
         try:
             os.chmod(path, 0o700)
         except OSError:
