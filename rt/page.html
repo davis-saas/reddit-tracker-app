@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reddit Tracker</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='%230B1513' stroke-width='3' stroke-linecap='round'%3E%3Crect width='32' height='32' rx='8' fill='%23C6D367' stroke='none'/%3E%3Cpath d='M9 23v-8M16 23V9M23 23v-6'/%3E%3C/svg%3E">
+<style>
+@font-face{font-family:Montserrat;src:url(/fonts/montserrat.woff2) format("woff2");font-weight:500 900;font-display:swap}
+@font-face{font-family:"Open Sans";src:url(/fonts/opensans.woff2) format("woff2");font-weight:400 700;font-display:swap}
+:root{color-scheme:dark;
+ --bg:#0B1513;--sb:#0F1F1C;--sf:#153430;--hv:#1B3F3A;--in2:#0B1513;--ln:rgba(255,255,255,.08);--ln2:rgba(255,255,255,.18);--lnl:rgba(205,215,105,.4);
+ --lime:#CDD769;--pri:#C6D367;--prih:#D6E07E;--h:#fff;--tx:#E8E6E6;--tx2:#BFC2C1;--mu:#A3A9A7;
+ --ok:#CDD769;--oks:rgba(205,215,105,.1);--wn:#F2C14E;--wns:rgba(242,193,78,.1);--wnl:rgba(242,193,78,.4);
+ --bad:#FF8A7A;--bas:rgba(255,138,122,.1);--bal:rgba(255,138,122,.4);--in:#8EC5FF;--ins:rgba(142,197,255,.1);--inl:rgba(142,197,255,.35);
+ --sh:0 2px 6px rgba(0,0,0,.35),0 14px 36px rgba(0,0,0,.5);
+ --fh:Montserrat,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+ --f:"Open Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--bd:1px solid var(--ln)}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 var(--f);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+h1,h2,h3,p,ul,ol{margin:0}h1,h2,h3{font-family:var(--fh);color:var(--h)}
+h1{font-size:34px;font-weight:900;line-height:1.1;letter-spacing:-.02em}h2{font-size:18px;font-weight:800;line-height:1.3;letter-spacing:-.01em}h3{font-size:15px;font-weight:700}b{font-weight:700;color:var(--h)}
+a{color:var(--lime);text-underline-offset:3px}a:hover{color:var(--prih)}
+code{font:12.5px/1.45 ui-monospace,Menlo,Consolas,monospace;color:var(--tx)}
+.muted,.sd,.dz2,.cnts,.qf,.qm,.notes,.bs,.un,.cm,.help,.cnt,.lab,.nb,.fnote,.empty,.rc ul,.hb p,.db>p,.todo h3,.lede,.nx,.crumb{color:var(--tx2)}
+.cm,.help,.crumb,.i.ext{color:var(--mu)}
+.small,.sd,.dz2,.cnts,.qf,.qm,.notes,.bs,.un,.fnote,.fm,.why,.nn,.nb,.lab,.shc,.rc>*,.bm ul,.rov,.shb,.nx,input[readonly]{font-size:13.5px}
+.ok-t{color:var(--ok)}.warn-t{color:var(--wn)}.bad-t{color:var(--bad)}.info-t{color:var(--tx2)}.okc{color:var(--ok)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:2px solid var(--lime);outline-offset:2px}[tabindex="-1"]:focus{outline:none}
+.i{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+.i.ext{width:12px;height:12px;margin-left:4px;vertical-align:-1px}
+.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.brand,.chip,.fsum,.fsum h2,.rch,.ph,.okh,.bt,.busy,.acts,.ch,.bx,.lnk,#barin,.dm,.nv,.nh,.cn,.st,.meta,.vh{display:flex;align-items:center}
+.acts,.ch,.bx,.fsum,#barin,.dm,.meta{flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:0 16px;border-radius:8px;border:1px solid var(--lime);
+ background:transparent;color:var(--lime);font:700 14px var(--fh);cursor:pointer;white-space:nowrap;text-decoration:none}
+.btn:hover{background:rgba(205,215,105,.1);color:var(--lime)}
+.btn.primary{background:var(--pri);border-color:var(--pri);color:var(--bg)}.btn.primary:hover{background:var(--prih)}
+.btn.caution{border-color:var(--wn);color:var(--wn)}.btn.caution:hover{background:var(--wns)}
+.btn.quiet{border-color:transparent;color:var(--tx2)}.btn.quiet:hover{background:var(--hv);color:var(--h)}
+.btn.link{border-color:transparent;padding:0 4px;text-decoration:underline;font-weight:600}.btn.link:hover{background:none;color:var(--prih)}
+.btn.sm{min-height:34px;padding:0 12px;font-size:13.5px}.btn.lg{min-height:46px;padding:0 22px;font-size:15px}.btn:disabled{opacity:.45;cursor:default}
+.tog{display:inline-flex;align-items:center;gap:6px;min-height:32px;border:0;background:none;padding:0 10px;color:var(--mu);font:700 13px var(--fh);cursor:pointer}
+.chev{transition:transform .2s}[aria-expanded=true]>.chev{transform:rotate(180deg)}
+.acts{gap:8px}.ch{gap:8px;margin-top:10px}
+/* shell */
+.shell{display:flex;min-height:100vh}
+.side{flex:0 0 272px;width:272px;position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--sb);border-right:var(--bd);padding:26px 14px 16px;display:flex;flex-direction:column;gap:24px}
+.brand{gap:10px;padding:0 8px;color:var(--h);text-decoration:none;font:900 19px var(--fh);letter-spacing:-.02em;white-space:nowrap}.brand:hover{color:var(--h)}
+.mark{width:32px;height:32px;border-radius:8px;background:var(--pri);color:var(--bg);display:grid;place-items:center;flex:none}.mark .i{width:18px;height:18px;stroke-width:2.4}
+.lime{color:var(--lime)}
+.nav,.cls,.rows,.steps,.qs,.notes,.sl,.rl,.byc{list-style:none;padding:0}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nv,.nh{gap:12px;padding:10px 12px;border-radius:8px;color:var(--tx2);text-decoration:none;font:700 14.5px var(--fh)}
+.nv:hover{background:var(--sf);color:var(--h)}.nv[aria-current]{background:var(--sf);color:var(--h)}.nv[aria-current] .i,.nh .i{color:var(--lime)}
+.nc{white-space:nowrap;margin-left:auto;font:600 12px var(--f);color:var(--tx2);display:inline-flex;gap:4px;align-items:center}.nc .i{width:13px;height:13px}
+.cls{margin:2px 0 2px 8px;display:flex;flex-direction:column;gap:1px}
+.cn{gap:9px;padding:7px 10px;border-radius:8px;color:var(--tx);text-decoration:none;font-size:14px;min-width:0}
+.cn:hover{background:var(--sf);color:var(--h)}.cn[aria-current]{background:var(--hv);color:var(--h);font-weight:700}
+.cn .i{width:14px;height:14px}.cnm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.cst{margin-left:auto;padding-left:6px;font-size:12px;white-space:nowrap}
+.s-ok{color:var(--ok)}.s-warn{color:var(--wn)}.s-bad{color:var(--bad)}.s-in{color:var(--in)}.s-pz{color:var(--mu)}
+.cn .cst.s-ok,.cn .cst.s-pz{color:var(--mu)}
+.addc{margin:4px 0 0 14px}.ncl .tog{margin-left:8px}
+#gchip{margin-top:auto;min-width:0;position:relative}.chip{gap:8px;padding:10px 12px;font-size:13.5px;color:var(--tx2)}
+.menuw{position:relative;min-width:0}.acct{width:100%;justify-content:flex-start;padding:10px 12px;min-height:56px;border:var(--bd);border-radius:15px;text-align:left;font-family:var(--f)}
+.av{flex:none;width:34px;height:34px;border-radius:50%;background:var(--hv);color:var(--lime);display:grid;place-items:center;font:800 13px var(--fh);text-transform:uppercase}
+.who{min-width:0;flex:1;display:flex;flex-direction:column;line-height:1.3}.who-l{font-size:12px;color:var(--mu);font-weight:400}
+.em{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--h);font-weight:600;font-size:13.5px}
+.menu{position:absolute;left:0;right:0;bottom:100%;margin-bottom:6px;z-index:30;background:var(--sf);border:1px solid var(--ln2);border-radius:10px;box-shadow:var(--sh);padding:4px}
+.menu .btn{width:100%;justify-content:flex-start}
+main{flex:1;min-width:0;padding:40px clamp(16px,3.5vw,56px) 56px}
+#banner,#loading,#app{max-width:1080px;margin-inline:auto}
+.view{display:flex;flex-direction:column;gap:20px}
+.vh{flex-wrap:wrap;justify-content:space-between;gap:14px 20px;align-items:flex-end}.vh>div:first-child{min-width:0}
+.lede{margin-top:8px;max-width:70ch}.crumb{font-size:13px;margin-bottom:6px}
+.meta{gap:8px 16px;margin-top:10px;font-size:14px}.un{font-size:14px;font-weight:600;color:var(--tx)}
+.st{gap:6px;font-weight:600;font-size:13.5px}
+.card{background:var(--sf);border:var(--bd);border-radius:15px;overflow-wrap:anywhere}
+.pad{padding:20px 22px}.pad>p+p{margin-top:8px}
+.ph{gap:12px;padding:16px 22px;border-bottom:var(--bd);flex-wrap:wrap}.ph h2{flex:1}
+.notice{display:flex;gap:12px;padding:14px 16px;border-radius:15px;border:1px solid var(--bal);background:var(--bas);margin-bottom:16px;overflow-wrap:anywhere}
+.notice>.i{margin-top:3px;color:var(--bad)}.notice.info{background:var(--ins);border-color:var(--inl)}.notice.info>.i{color:var(--in)}.view .notice{margin:0}.nb{margin-top:4px}
+.start{padding:20px 24px 6px}.steps{margin-top:10px}
+.step{display:grid;grid-template-columns:32px 1fr auto;gap:4px 14px;padding:14px 0;border-top:var(--bd)}
+.sn{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:700 13.5px var(--fh);border:1.5px solid var(--ln2);color:var(--tx2)}
+.cur .sn{background:var(--pri);border-color:var(--pri);color:var(--bg)}.step.done .sn{background:var(--oks);border-color:var(--lnl);color:var(--ok)}
+.step h3{padding-top:3px}.step.done h3,.todo h3{font-weight:600}.sd{margin-top:2px;max-width:68ch}
+.drop{display:flex;align-items:center;gap:14px 20px;padding:26px 26px;border:2px dashed var(--lnl);border-radius:15px;background:var(--sf);cursor:pointer}
+.drop:hover{border-color:var(--lime);background:var(--hv)}
+.dzi{width:52px;height:52px;border-radius:12px;background:var(--oks);color:var(--lime);display:grid;place-items:center;flex:none}.dzi .i{width:26px;height:26px}
+.dz{flex:1;min-width:0}.dz1{font:800 18px var(--fh);color:var(--h)}
+.fsum{gap:6px 18px;padding:12px 14px 12px 22px}.fsum h2{font-size:15px;gap:8px}.cnts{display:flex;gap:14px}.cnts b{color:var(--h)}.fa{margin-left:auto}
+.qs{background:var(--wns);border-top:1px solid var(--wnl)}
+.q{display:grid;grid-template-columns:24px 1fr;gap:4px 12px;padding:14px 22px}.q+.q{border-top:1px solid var(--wnl)}
+.qi{color:var(--wn);margin-top:2px;width:20px;height:20px}.q.bad .qi{color:var(--bad)}.qf,.qm{margin-top:3px;max-width:80ch}
+.tag{font-size:12px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--ins);color:var(--in)}
+.nn{border-top:var(--bd);padding:10px 22px}.fnote{margin-top:-8px}
+.rc{padding:14px 16px 18px 22px}.rch{gap:10px}.rch h2{font-size:15px;flex:1}.rc ul{padding-left:18px}.rc>div,.rc>p{margin-top:8px}
+.cell{display:grid;grid-template-columns:96px 18px 1fr;gap:10px;align-items:start;padding:9px 12px;border-radius:8px;min-width:0}.cell>.i{margin-top:3px;color:var(--mu)}
+.lab{font-weight:600;color:var(--tx2);padding-top:1px}
+.cl{display:block;font-size:14.5px;font-weight:600;color:var(--h)}.cm{display:block;font-size:12.5px;line-height:1.4}
+.cell.ready{background:var(--ins);box-shadow:inset 0 0 0 1px var(--inl)}.cell.ready>.i,.cell.ready .cl{color:var(--in)}
+.cell.warn{background:var(--wns);box-shadow:inset 0 0 0 1px var(--wnl)}.cell.warn>.i,.cell.warn .cl{color:var(--wn)}
+.cell.done>.i{color:var(--ok)}.cell.done .cl,.never .cl{font-weight:500}.never .cl{color:var(--tx2)}
+.rl>li{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:6px 18px;align-items:center;padding:8px 12px}.rl>li+li{border-top:var(--bd)}
+.nx{padding:0 10px}
+.byc>li{padding:14px 16px 14px 22px}.byc>li+li{border-top:var(--bd)}.byc a{font-weight:700}
+.bcc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}.bcc .cell{grid-template-columns:18px 1fr}.bcc .lab{grid-column:1/-1;padding:0}
+.shc{min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}.busy{gap:6px}.shc>a,.sv a{font-weight:600}
+.sht{font:700 15px var(--fh);color:var(--h);margin-bottom:8px}.more{margin-top:14px}
+.rep{margin-top:18px;padding-top:18px;border-top:var(--bd)}.rep .help{margin-top:8px}
+.notes{padding:4px 22px 16px;display:grid;gap:4px}.notes li{display:flex;gap:8px}.notes .i{margin-top:2px}
+.empty{padding:28px 22px;text-align:center}
+.srow{display:grid;grid-template-columns:220px 1fr auto;gap:8px 20px;padding:18px 22px}.srow+.srow{border-top:var(--bd)}
+.sk{font:700 14.5px var(--fh);color:var(--h)}.sv{min-width:0;font-size:14px;display:grid;gap:4px;justify-items:start}.sx{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start}
+.sl .shc a{font-weight:700}.sl .srow .sk a{color:var(--h);text-decoration:none}.sl .srow .sk a:hover{color:var(--lime);text-decoration:underline}
+.lnk{gap:6px;width:100%}.lnk input{margin:0}.lnk .btn{flex:none}
+.hb{font-size:14.5px}.hb ol{padding-left:22px;display:grid;gap:8px}.hb p{margin-top:10px}.hb .btn{margin-top:16px}
+.bar{position:fixed;left:272px;right:0;bottom:0;z-index:40;background:var(--sb);border-top:1px solid var(--lnl);box-shadow:0 -8px 24px rgba(0,0,0,.4);max-height:60vh;overflow-y:auto}
+.bprog{position:absolute;left:0;top:0;height:3px;background:var(--lime);transition:width .5s}
+.bar .wrap{max-width:1192px;margin:0 auto;padding:12px clamp(16px,3.5vw,56px)}
+#barin{gap:10px 16px}.bm{flex:1 1 300px;min-width:0;overflow-wrap:anywhere}.bt{gap:8px;font:700 15px var(--fh);color:var(--h)}.rdy{color:var(--in)}
+.bs{margin-top:2px}.bm ul{margin-top:4px;padding-left:18px;color:var(--tx2)}.bx{gap:8px}
+#toast{position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:70;display:flex;gap:8px;align-items:flex-start;background:var(--h);color:var(--bg);
+ padding:10px 8px 10px 16px;border-radius:10px;box-shadow:var(--sh);width:max-content;max-width:min(560px,calc(100% - 32px));font-size:13.5px;font-weight:600;transition:opacity .2s}
+#toast.off{opacity:0;pointer-events:none}#toastmsg{display:flex;gap:10px;padding-top:3px;overflow-wrap:anywhere}
+.tx{border:0;background:none;color:inherit;width:28px;height:28px;display:grid;place-items:center;cursor:pointer;flex:none}
+#overlay{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(11,21,19,.88);pointer-events:none;padding:24px}
+.ov{padding:32px 40px;border-radius:15px;background:var(--sf);border:2px dashed var(--lime);font:800 18px var(--fh);color:var(--h)}
+dialog{border:1px solid var(--ln2);border-radius:15px;padding:0;max-width:560px;width:calc(100% - 32px);background:var(--sf);color:var(--tx);box-shadow:var(--sh)}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+.db{padding:24px 24px 8px;max-height:calc(100vh - 170px);overflow:auto;overflow-wrap:anywhere}dialog h2{margin-bottom:14px}.db>p{margin-bottom:14px}.okh{gap:10px}
+.dm{gap:8px;justify-content:flex-end;padding:14px 24px 18px;border-top:var(--bd)}.why{margin-right:auto}.why:empty,.fm:empty{display:none}
+.fld{margin:0 0 16px}.fld>label,.lbl{display:block;font-weight:700;color:var(--h)}.help{display:block;font-size:13px;margin-top:5px}.fm{display:block;margin-top:5px}
+input[type=text]{font:inherit;width:100%;min-height:42px;margin-top:6px;padding:8px 12px;border-radius:8px;border:1px solid var(--ln2);background:var(--in2);color:var(--h)}
+input[type=text]:focus{outline:none;border-color:var(--lime);box-shadow:0 0 0 3px rgba(205,215,105,.25)}input[aria-invalid=true]{border-color:var(--bad)}
+input[readonly],.rov,.shb{background:var(--in2)}.rov,.shb{margin-top:6px;padding:10px 12px;border-radius:8px;border:var(--bd)}
+@media (max-width:859px){
+ .shell{display:block}
+ .side{position:static;width:auto;height:auto;overflow:visible;flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px 12px;padding:12px 16px;border-right:0;border-bottom:var(--bd)}
+ .brand{flex:1;padding:0;font-size:17px}.mark{width:28px;height:28px}
+ #gchip{margin:0;order:2}.acct{min-height:44px;padding:4px 10px;border-radius:10px}.who-l{display:none}.em{max-width:38vw}
+ .menu{bottom:auto;top:100%;left:auto;right:0;min-width:210px;margin:6px 0 0}
+ .nav{order:3;width:100%;flex-direction:row;flex-wrap:wrap;gap:4px}.nv{padding:8px 10px;min-height:44px;font-size:13.5px;gap:8px}
+ .ncl{order:9;width:100%;border-top:var(--bd);padding-top:8px;margin-top:4px}.nh{padding:4px 2px;font-size:13px}
+ .cls{flex-direction:row;flex-wrap:wrap;gap:6px;margin:4px 0}.cn{border:var(--bd);min-height:44px;max-width:100%}.addc{margin:6px 0 0}.ncl .tog{margin:0;min-height:44px}
+ main{padding:24px 16px 40px}h1{font-size:28px}
+ .bar{left:0}.srow{grid-template-columns:1fr}.sx{justify-content:flex-start}
+ .rl>li{grid-template-columns:1fr}.bcc{grid-template-columns:1fr}.bcc .cell{grid-template-columns:84px 18px 1fr}.bcc .lab{grid-column:auto}}
+@media (max-width:640px){
+ .drop{flex-wrap:wrap;padding:18px}.drop>.btn{width:100%}.start{padding:16px 16px 4px}
+ .step{grid-template-columns:32px 1fr}.step>.acts{grid-column:2}.q{grid-template-columns:1fr;padding:14px 16px}.qi{display:none}
+ .fsum,.ph,.srow,.rc,.pad,.nn,.byc>li{padding-inline:16px}.notes{padding-inline:16px}.fa{margin-left:-11px;width:100%}
+ .cell{grid-template-columns:80px 18px 1fr;padding:8px}.rl>li{padding:8px 6px}.nx{padding:0 8px}
+ .btn,.btn.sm,.tog,.shc a,.sv a,input[type=text]{min-height:44px}.btn{white-space:normal}.shc a,.sv a{display:inline-flex;align-items:center}
+ .wide{display:none}.bar .wrap{padding:10px 16px}#barin{gap:8px 12px}.bx{width:100%}.bx .btn.primary{flex:1}
+ .db{padding:18px 16px 6px}.dm{padding:12px 16px 16px}.dm .btn{flex:1 1 auto}.tx{width:44px;height:44px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head><body>
+<svg style="display:none">
+<symbol id="i-check"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-done"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></symbol>
+<symbol id="i-circle"><circle cx="12" cy="12" r="8.5"/></symbol>
+<symbol id="i-upload"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
+<symbol id="i-alert"><path d="M10.3 3.9 2.4 17.6A2 2 0 0 0 4.1 20.6h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0ZM12 9v4.5M12 17h.01"/></symbol>
+<symbol id="i-info"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4.5M12 8h.01"/></symbol>
+<symbol id="i-x"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-xc"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></symbol>
+<symbol id="i-plus"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-ext"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></symbol>
+<symbol id="i-spinner"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></symbol>
+<symbol id="i-chev"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-users"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.8c1.6.8 2.6 2.6 3 5.2"/></symbol>
+<symbol id="i-sheet"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 9v12"/></symbol>
+<symbol id="i-gear"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></symbol>
+<symbol id="i-book"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h14M8 7h8"/></symbol>
+<symbol id="i-pause"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></symbol>
+<symbol id="i-edit"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+<symbol id="i-chart"><path d="M4 19v-8M10 19V5M16 19v-6M21 19H3"/></symbol>
+</svg>
+<div id="overlay" hidden><b class="ov">Drop your Reddit Pro files</b></div>
+<div class="shell">
+<nav class="side" aria-label="Main">
+ <a class="brand" id="brand" href="#upload"><span class="mark" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><use href="#i-chart"/></svg></span><span><span class="lime">Reddit</span> Tracker</span></a>
+ <ul class="nav" id="nav"></ul>
+ <div id="gchip"></div>
+</nav>
+<main id="main">
+ <div id="banner"></div>
+ <p id="loading" class="muted">Loading…</p>
+ <div id="app" hidden>
+  <div id="v-upload" class="view">
+   <header class="vh"><div><h1 tabindex="-1">Upload reports</h1><p class="lede">Drop the Posts, Comments and Account reports from Reddit Pro, then press Import. Your Google Sheets update after that.</p></div></header>
+   <section id="start" class="card start" aria-label="Getting started" hidden></section>
+   <section aria-label="Files" class="view">
+    <div id="drop" class="drop"><span class="dzi"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-upload"/></svg></span>
+     <div class="dz"><p class="dz1">Drop the Reddit Pro downloads here</p><p class="dz2">Or anywhere on this page: Posts, Comments and Account files, for one client or many. Nothing is saved until you press Import.</p></div>
+     <button class="btn" data-act="choose">Choose files</button></div>
+    <input id="pick" type="file" accept=".csv,text/csv" multiple hidden>
+    <div id="files"></div>
+   </section>
+   <div id="receipt"></div>
+   <div id="byclient"></div>
+  </div>
+  <div id="v-client" class="view" hidden></div>
+  <div id="v-sheets" class="view" hidden></div>
+  <div id="v-settings" class="view" hidden></div>
+  <div id="v-howto" class="view" hidden>
+   <header class="vh"><div><h1 tabindex="-1">How to download the reports</h1><p class="lede">Three reports per client, all from Reddit Pro.</p></div></header>
+   <section class="card pad hb"><ol><li>Log in to Reddit as the client, open <b>Reddit Pro</b>, then <b>Performance</b>.</li>
+    <li><b>Posts</b> tab, then <b>Comments</b> tab: keep the sort on <b>New</b> and click <b>Download CSV</b>.</li>
+    <li><b>Account</b> tab: choose <b>Past year</b>, then <b>Download CSV</b>.</li>
+    <li>Drop the files on <b>Upload reports</b> and press <b>Import</b>. Files for many clients can go in at once.</li></ol>
+    <p>Don't open the files in Excel or Numbers before dropping them.</p>
+    <p>Comment text isn't in Reddit's files; each comment has its post title, subreddit and a link.</p>
+    <a class="btn" id="howto-go" href="#upload">Go to Upload reports</a></section>
+  </div>
+ </div>
+</main>
+</div>
+<section id="bar" class="bar" aria-label="Import and Google Sheets" hidden><div class="bprog" id="bprog" hidden></div><div class="wrap" id="barin" aria-live="polite"></div></section>
+<div id="toast" class="off"><div id="toastmsg" role="status" aria-live="polite"></div><button class="tx" data-act="toastx" aria-label="Close this message"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+<dialog id="dlg" aria-labelledby="dlg-t"></dialog>
+<script>
+"use strict";
+const README_URL='https://github.com/your-name/reddit-tracker#google-setup';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>`&#${c.charCodeAt(0)};`);
+const I=(n,c)=>`<svg class="i${c?' '+c:''}" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const B=(act,label,id,cls='sm',x='')=>`<button type="button" class="btn ${cls}" data-act="${act}"${id?` data-id="${esc(id)}"`:''}${x}>${label}</button>`;
+const SPIN=I('spinner','spin');
+const A=(href,label,cls)=>`<a${cls?` class="${cls}"`:''} href="${esc(href)}" target="_blank" rel="noopener noreferrer">${label}${I('ext','ext')}</a>`;
+const KINDS={post:'Posts',comment:'Comments',account:'Account'},K3=Object.keys(KINDS),NOUN={post:'posts',comment:'comments',account:'days'};
+const NEEDS=['needs_client','name_mismatch','doesnt_match','new_client','paused','cant_use','changed','failed'];
+const SETTLED=['already','older_copy','same_file'];
+const REPORTISH=/(Post Insights|Comment Insights|Account Performance) Report/i;
+const SHEETS={started:'Updating your Google Sheets now.',queued:'Your Sheets update right after this one.',
+ not_signed_in:'Sign in with Google to put the new numbers in your Sheets.',nothing_to_do:'No client has a Google Sheet yet.'};
+const DEMO=(location.hash.match(/^#demo=(\w+)/)||[])[1]||'';
+const VIEWS=['upload','client','sheets','settings','howto'],DUE=14;
+let S=null,plan=null,files=new Map(),nextId=1,down=false,needLink='',busy=false,checking=false,previewT=0,previewSeq=0,pollT=0,toastT=0,
+ note='',prevErr='',importErr='',receipt=null,signin=null,after=null,lastAt,lastFin,ended=0,barHide=false,dlgSubmit=null,opener=null,fails=0,statusErr='',pasting=0,quick=0;
+const ui={menu:false,paused:false,view:'upload',cid:''},Q='sm quiet',acting=new Set();
+const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
+const client=id=>S&&S.clients.find(c=>c.id===id);
+const SI=g=>g.problem==='rejected'?'Sign in again':'Sign in with Google';
+const AR=g=>g.problem==='app_refused',NO=g=>AR(g)?'Google no longer accepts this copy':"Google isn't set up in this copy";
+const NOG=g=>AR(g)?'Google no longer accepts this copy of Reddit Tracker. Download the newest Reddit Tracker and start it; your clients and numbers are kept.'
+ :`This copy ${g.problem==='bad_app_file'?"can't read its Google connection file (google_app.json)":'has no Google connection file'}, so it can't use Google Sheets. Ask whoever gave it to you for a working one, or ${A(README_URL,'see how to set it up')}.`;
+const GS=(g,x)=>!g.configured?NOG(g):g.signed_in?`Signed in as <b>${esc(g.email)}</b>.`
+ :g.problem==='rejected'?`Google stopped accepting the sign-in${g.email?' for '+esc(g.email):''}. Sign in again to keep your Sheets updating.`:x;
+
+// Views live in the hash: #upload, #client=<id>, #sheets, #settings, #howto (after #demo=<state>& in demo mode)
+const href=v=>'#'+(DEMO?'demo='+DEMO+(v?'&'+v:''):v);
+const cref=id=>href('client='+encodeURIComponent(id));
+function readView(){const h=location.hash.slice(1).replace(/^demo=\w+&?/,''),m=h.match(/^client=(.+)$/);
+ ui.cid=m?decodeURIComponent(m[1]):'';ui.view=m?'client':VIEWS.includes(h)?h:'upload'}
+function go(v){if(v===ui.view)return;const h=href(v);if(location.hash!==h)location.hash=h}
+addEventListener('hashchange',()=>{const d=(location.hash.match(/^#demo=(\w+)/)||[])[1]||'';if(d!==DEMO)return location.reload();
+ const was=ui.view+ui.cid;readView();ui.menu=false;render();if(was===ui.view+ui.cid)return;
+ const v=$('v-'+ui.view),h=v&&v.querySelector('h1');if(matchMedia('(max-width:859px)').matches)$('main').scrollIntoView();else scrollTo(0,0);if(h)h.focus({preventScroll:true})});
+readView();
+
+function daysAgo(d){const x=new Date(d+'T00:00:00'),t=new Date();t.setHours(0,0,0,0);return Math.round((t-x)/864e5)}
+function dayLabel(d){const n=daysAgo(d),x=new Date(d+'T00:00:00');return n===0?'today':n===1?'yesterday':x.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:x.getFullYear()===new Date().getFullYear()?undefined:'numeric'})}
+function when(iso){const d=new Date(iso),o={hour:'2-digit',minute:'2-digit'};
+ return !iso||isNaN(d)?'':d.toDateString()===new Date().toDateString()?d.toLocaleTimeString([],o):d.toLocaleString('en-GB',{day:'numeric',month:'short',...o})}
+
+// Same rules as the server's csvfiles.username_from
+function normUser(s){s=(s||'').trim();if(!s)return{};
+ const m=s.match(/reddit\.com\/(?:user|u)\/([^\/?#\s]+)/)||s.match(/^\/?u\/([^\/\s]+)\/?$/)||s.match(/^(?:\d{4}-\d{2}-\d{2}(?:_\d{6})*_)?(.+?)\s+(?:Post Insights|Comment Insights|Account Performance) Report/i);
+ const u=m?m[1].trim():s,ok=x=>/^[A-Za-z0-9_-]{3,20}$/.test(x),h=u.replace(/\s+/g,'_');if(ok(u))return{user:u};
+ return{error:u.includes(' ')&&ok(h)?`That's not a Reddit username: usernames have no spaces. Did you mean ${h} or ${h.replace(/_/g,'-')}?`
+  :"That's not a Reddit username. Usernames are 3 to 20 letters, numbers, _ or -, with no spaces."}}
+
+function actKey(el){const d=el&&el.dataset;return d&&d.act?[d.act,d.id,d.file,el.value].join('|'):null}
+function put(el,html){if(el.__h===html)return;const a=document.activeElement,key=el.contains(a)?actKey(a):null;el.__h=html;el.innerHTML=html;
+ if(key){const b=[...el.querySelectorAll('[data-act]')].find(x=>actKey(x)===key);if(b)b.focus({preventScroll:true})}}
+
+async function api(path,body){
+ if(DEMO)return demoApi(path,body);
+ const opt={headers:{'Content-Type':'application/json','X-RT':'1'},cache:'no-store'};if(body){opt.method='POST';opt.body=JSON.stringify(body)}
+ let res,data=null;
+ try{res=await fetch(path,opt)}catch(e){setDown(true);throw new Error(GONE)}
+ setDown(false);try{data=await res.json()}catch(e){}
+ if(res.status===403&&data&&data.code==='need_link'){needLink=data.error;render()}
+ if(!res.ok||!data)throw Object.assign(new Error(data&&data.error||`Something went wrong (error ${res.status}). Try again in a minute.`),{code:data&&data.code,field:data&&data.field});
+ return data}
+const GONE="Reddit Tracker isn't answering. Start it again, then try once more.";
+function setDown(v){if(v===down)return;down=v;if(!v&&importErr.startsWith(GONE))importErr='';render();if(!v&&files.size)schedulePreview()}
+function toast(msg,kind='ok',ms=6000){put($('toastmsg'),I(kind==='bad'?'alert':kind==='info'?'info':'check')+`<span>${esc(msg)}</span>`);
+ $('toast').className='';clearTimeout(toastT);if(ms)toastT=setTimeout(hideToast,ms)}
+function hideToast(){$('toast').className='off'}
+// http links (other devices) have no clipboard API
+async function copy(text,btn){const i=btn.parentNode.querySelector('input');let ok=1;
+ try{await navigator.clipboard.writeText(text)}catch(e){i.focus();i.setSelectionRange(0,i.value.length);try{ok=document.execCommand('copy')}catch(e){ok=0}}
+ toast(ok?'Copied.':'The link is selected: '+(matchMedia('(pointer:fine)').matches?'press Ctrl+C (⌘C on a Mac) to copy it.':'copy it from there.'),ok?'ok':'info')}
+
+async function refresh(){clearTimeout(pollT);const was=S&&S.rev,run=S&&S.sheets.running;
+ try{S=Object.assign({app:{},google:{},clients:[],sheets:{}},await api('/api/status'));needLink=statusErr='';fails=0}catch(e){fails++;statusErr=e.message}
+ try{if(!fails)afterStatus(was,run)}finally{render();schedule()}}
+// While failing: 3 s, doubling to 30 s
+function schedule(){if(DEMO)return;clearTimeout(pollT);const g=S&&S.google;
+ pollT=setTimeout(refresh,fails?Math.min(3e4,1500*2**fails):document.hidden?6e4:signin||g&&g.busy||Date.now()<quick?2e3:S&&S.sheets.running?4e3:2e4)}
+function afterStatus(was,run){
+ if(was&&was!==S.rev&&files.size&&!busy)schedulePreview();
+ const L=S.google.last,at=L?L.at+L.ok+L.message:null;  // not just .at: a pick can fail in the same second
+ if(lastAt===undefined)lastAt=at;
+ else if(at!==lastAt&&!pasting){lastAt=at;signin=null;quick=Date.now()+8e3;if(dlg.open&&dlg.dataset.kind==='paste')dlg.close();const a=after;after=null;
+  if(L){toast(L.message,L.ok?'ok':'bad',L.ok&&!L.keep?6000:0);if(L.ok&&L.purpose==='signin'&&a&&!L.keep)a()}}
+ if(signin&&Date.now()>signin.until)signin=after=null;
+ const j=S.sheets,fin=j.finished_at||null;
+ if(!j.running&&fin&&(run||lastFin!==undefined&&fin!==lastFin)){ended=1;barHide=false;if(!problems().length)setTimeout(()=>{barHide=true;renderBar()},8000)}
+ lastFin=fin}
+
+const live=()=>plan&&files.size?plan.files.filter(f=>files.has(f.id)):[];
+const pfile=id=>id&&files.has(id)&&plan.files.find(f=>f.id===id)||null;
+const slots=cid=>plan&&plan.slots&&plan.slots[cid];
+const slotFile=(cid,k)=>slots(cid)?pfile(slots(cid)[k]):null;
+const olderFiles=(cid,k)=>slots(cid)?(slots(cid).older||[]).map(pfile).filter(f=>f&&f.report===k):[];
+const redo=f=>(f.warnings||[]).some(w=>w.level==='redo');
+function cards(){const a=S.all_sheet&&S.all_sheet.id?[['All clients',S.all_sheet]]:[];
+ for(const c of S.clients)if(!c.paused&&c.sheet&&c.sheet.id)a.push([c.name,c.sheet]);return a}
+const problems=()=>cards().filter(x=>x[1].state==='problem');
+const hasFiles=c=>K3.some(k=>slotFile(c.id,k)||olderFiles(c.id,k).length);
+
+function render(){const ok=!!S&&!S.settings_problem&&!needLink;
+ $('loading').hidden=!!S||!!needLink||down||!!statusErr;$('app').hidden=!ok;
+ for(const v of VIEWS)$('v-'+v).hidden=v!==ui.view;
+ $('brand').href=$('howto-go').href=href('upload');
+ renderTop();renderBanner();renderNav(ok);
+ if(ok){renderStart();renderFiles();renderReceipt();renderByClient();renderClient();renderSheets();renderSettings()}renderBar()}
+
+function renderTop(){const g=S&&!S.settings_problem&&!needLink&&S.google;let h='';
+ if(g&&!g.configured)h=`<span class="chip">${I('info')}${AR(g)?'Get the newest copy':"Google isn't set up"}</span>`;
+ else if(g&&signin)h=`<span class="chip">${SPIN}Signing in…</span>`;
+ else if(g&&g.signed_in){const w=g.email||g.name||'';h=`<div class="menuw">${B('menu',`<span class="av" aria-hidden="true">${esc(w.slice(0,1))}</span><span class="who"><span class="who-l">Signed in as </span><span class="em">${esc(w)}</span></span>${I('chev','chev')}`,'',Q+' acct',` aria-expanded="${ui.menu}"`)}`+
+  (ui.menu?`<div class="menu">${B('switch','Use a different account','',Q)+B('signout','Sign out','',Q)}</div>`:'')+'</div>'}
+ else if(g)h=B('signin',SI(g),'','sm');
+ put($('gchip'),h)}
+
+function cstat(c){const sh=c.sheet||{};
+ if(c.paused)return['pz','pause','Paused'];
+ if(sh.state==='problem')return['bad','xc','Sheet problem'];
+ if(K3.some(k=>slotFile(c.id,k)))return['in','upload','Files ready'];
+ if(K3.some(k=>{const d=c.last&&c.last[k];return!d||daysAgo(d)>=DUE}))return['warn','alert','Needs files'];
+ if(!sh.id)return['warn','alert','No Sheet yet'];
+ return['ok','done','Up to date']}
+function renderNav(ok){if(!ok)return put($('nav'),'');
+ const cur=v=>ui.view===v?' aria-current="page"':'',act=S.clients.filter(c=>!c.paused),pz=S.clients.filter(c=>c.paused),np=problems().length;
+ const li=c=>{const[k,ic,w]=cstat(c);return `<li><a class="cn" href="${cref(c.id)}"${ui.view==='client'&&ui.cid===c.id?' aria-current="page"':''}>${I(ic,'s-'+k)}<span class="cnm">${esc(c.name)}</span><span class="cst s-${k}">${w}</span></a></li>`};
+ put($('nav'),`<li><a class="nv" href="${href('upload')}"${cur('upload')}>${I('upload')}Upload reports${files.size?`<span class="nc">${plural(files.size,'file')}</span>`:''}</a></li>`+
+  `<li class="ncl"><span class="nh" id="nav-cl">${I('users')}Clients${act.length?`<span class="nc">${act.length}</span>`:''}</span>`+
+  (act.length?`<ul class="cls" aria-labelledby="nav-cl">${act.map(li).join('')}</ul>`:'')+
+  (pz.length?B('paused',`Paused (${pz.length})${I('chev','chev')}`,'','tog',` aria-expanded="${ui.paused}"`)+(ui.paused?`<ul class="cls" aria-label="Paused clients">${pz.map(li).join('')}</ul>`:''):'')+
+  B('add',I('plus')+'Add client','','sm link addc')+'</li>'+
+  `<li><a class="nv" href="${href('sheets')}"${cur('sheets')}>${I('sheet')}Google Sheets${np?`<span class="nc bad-t">${I('alert')}${plural(np,'problem')}</span>`:''}</a></li>`+
+  `<li><a class="nv" href="${href('settings')}"${cur('settings')}>${I('gear')}Settings</a></li>`+
+  `<li><a class="nv" href="${href('howto')}"${cur('howto')}>${I('book')}How to download</a></li>`)}
+
+function renderBanner(){let h='';const sp=S&&S.settings_problem,box=(t,body,cls='',ic=I('alert'))=>`<div class="notice ${cls}">${ic}<div><b>${t}</b>${body}</div></div>`;
+ if(needLink)h=box('This device needs the Reddit Tracker link again',`<p class="nb">${esc(needLink)}</p>`);
+ else if(down)h=box("Reddit Tracker isn't answering",'<p class="nb">Start it again on the computer where it runs. This page reconnects by itself and keeps your dropped files.</p>');
+ else if(statusErr)h=box('Reddit Tracker has a problem',`<p class="nb">${esc(statusErr)} This page tries again by itself.</p>`);
+ if(sp&&!needLink)h+=`<section class="card pad"><b class="bad-t">Reddit Tracker's settings file can't be read</b><p>${esc(sp.message)}</p>`+
+  (sp.backup?`<p class="small muted">Last good copy: <code>${esc(sp.backup)}</code></p>`:'')+`<div class="ch">${B('restore','Restore the last good copy','','primary')}</div></section>`;
+ else if(signin&&S)h+=box((signin.purpose==='pick'?'Choose the Sheet':'Finish signing in')+' in the Google tab that just opened',
+  `<div class="nb acts">${signin.url?A(signin.url,'Open Google sign-in','btn primary sm'):''}${B('paste',"Didn't work? Paste the address instead",'','sm link')+B('signincancel','Cancel','',Q)}</div>`,'info',SPIN);
+ put($('banner'),h)}
+
+function renderStart(){const g=S.google,el=$('start'),show=!g.signed_in||S.first_run;el.hidden=!show;if(!show)return put(el,'');
+ const n=S.clients.length,st=[g.signed_in,n>0,!S.first_run],cur=st.indexOf(false);
+ const step=(i,t,body,btn)=>`<li class="step ${st[i]?'done':i===cur?'cur':'todo'}"><span class="sn">${st[i]?I('check'):i+1}</span><div><h3>${t}</h3><p class="sd">${body}</p></div>${st[i]||!btn?'':`<div class="acts">${btn}</div>`}</li>`;
+ put(el,`<h2>Getting started</h2><ol class="steps">`+step(0,'Sign in with Google',GS(g,'Reddit Tracker only sees the Sheets it makes or you choose.'),g.configured&&B('signin',SI(g),'','primary'))+
+  step(1,'Add your first client',n?`${plural(n,'client')} added.`:'Type their Reddit username or paste their profile link.',B('add',I('plus')+'Add client','',cur===1?'primary':''))+
+  step(2,'Drop the three Reddit Pro downloads in the box below',`Posts, Comments and Account. <a href="${href('howto')}">How to download them</a>.`)+'</ol>')}
+
+function renderFiles(){const line=note||prevErr?`<p class="fnote">${prevErr?`<span class="bad-t">${esc(prevErr)}</span> `:''}${esc(note)}</p>`:'';
+ if(!files.size)return put($('files'),line);
+ const L=live(),rd=L.filter(f=>f.import),nd=L.filter(f=>NEEDS.includes(f.status)),nn=L.filter(f=>SETTLED.includes(f.status)),wait=checking||!plan&&!prevErr,n=plural(files.size,'file');
+ let h=`<div class="card"><div class="fsum"><h2>${wait?SPIN+`Checking ${n}…`:n+(plan?' checked':' not checked yet')}</h2>`;
+ if(!wait&&plan)h+=`<p class="cnts"><span><b>${rd.length}</b> ready</span>${nd.length?`<span class="warn-t"><b>${nd.length}</b> need${nd.length===1?'s':''} you</span>`:''}${nn.length?`<span><b>${nn.length}</b> not needed</span>`:''}</p>`;
+ h+=(prevErr&&!checking?B('recheck','Check again','','sm primary'):'')+`<span class="fa">${B('choose',I('plus')+'Add more files','',Q)+B('clear',I('x')+'Remove all','',Q)}</span></div>`;
+ if(!wait&&nd.length)h+=`<ul class="qs">${groups(nd).map(question).join('')}</ul>`;
+ if(!wait&&nn.length)h+=`<p class="nn">${nn.length===1?'1 file is':nn.length+' files are'} already imported or an older copy, so nothing more is needed.</p>`;
+ put($('files'),h+'</div>'+line)}
+function groups(list){const g=new Map(),rank=x=>x[0].status==='new_client'?1:x[0].status==='paused'?2:0;
+ for(const f of list){const k=f.status==='new_client'?'n'+String(f.new_username).toLowerCase():f.status==='paused'?'p'+f.paused_client:'f'+f.id;
+  if(!g.has(k))g.set(k,[]);g.get(k).push(f)}
+ return [...g.values()].sort((a,b)=>rank(a)-rank(b))}
+function question(g){const f=g[0],k=f.report,rep=KINDS[k]||'',many=g.length>1,v=id=>` value="${esc(id)}"`;let t,ic='info',bad=false,msg=f.message||'',acts='';
+ const leave=B('leave',I('x')+`Leave ${many?'them':'it'} out`,g.map(x=>x.id).join(','));
+ switch(f.status){
+ case 'needs_client':case 'doesnt_match':{t=`Whose ${rep?rep+' ':''}file is this?`;
+  const gs=f.status==='needs_client'&&f.guess?f.guess.client:null,rank=c=>c.id===gs?0:k&&slotFile(c.id,k)?2:1;
+  acts=S.clients.filter(c=>!c.paused&&c.id!==f.against).sort((a,b)=>rank(a)-rank(b)).map(c=>B('whose',esc(c.name)+(c.id===gs?' <span class="tag">likely</span>':''),f.id,'sm',v(c.id))).join('')+leave;
+  if(gs)msg+=` It looks like ${f.guess.name}'s: ${f.guess.matched} of its ${f.guess.of} ${NOUN[k]||'rows'} are already theirs.`;break}
+ case 'name_mismatch':t=`Is this ${f.guess?f.guess.name:'another client'}'s file?`;acts=(f.guess?B('whose',`It's ${esc(f.guess.name)}'s`,f.id,'sm',v(f.guess.client)):'')+leave;break;
+ case 'new_client':t=`u/${f.new_username} isn't one of your clients yet`;ic='plus';msg=`Add the account as a client to import ${many?'these files':'this file'}, or leave ${many?'them':'it'} out.`;
+  acts=B('addfrom',I('plus')+`Add u/${esc(f.new_username)} as a client`,'','sm',v(f.new_username))+leave;break;
+ case 'paused':{const c=client(f.paused_client),n=c?c.name:'This client';t=`${n} is paused`;msg=`${many?"These files won't":"This file won't"} be saved while ${n} is paused.`;
+  acts=(c?B('resume','Resume '+esc(n),c.id):'')+leave;break}
+ default:t={failed:"This file couldn't be saved",changed:'This file was checked again'}[f.status]||"This file can't be used";bad=f.status!=='changed';acts=leave}
+ return `<li class="q${bad?' bad':''}">${I(bad?'alert':ic,'qi')}<div><h3>${esc(t)}</h3><p class="qf">${g.map(x=>esc(x.name)).join(', ')}</p>`+
+  `${msg?`<p class="qm">${esc(msg)}</p>`:''}<div class="ch">${acts}</div></div></li>`}
+function renderReceipt(){const r=receipt;put($('receipt'),r?`<section class="card rc"><div class="rch">${I('done','okc')}<h2>Imported ${plural(r.n,'file')} · ${esc(when(r.at))}</h2>`+
+ B('receiptx',I('x'),'',Q,' aria-label="Close"')+'</div>'+r.lines.map(x=>`<div><b>${esc(x.name)}</b><ul>${x.lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul></div>`).join('')+
+ r.more.map(m=>`<p class="muted">${esc(m)}</p>`).join('')+'</section>':'')}
+// Upload view: one row per client that has dropped files
+function renderByClient(){const cs=plan&&!checking?S.clients.filter(c=>!c.paused&&hasFiles(c)):[];
+ put($('byclient'),cs.length?`<section class="card" aria-labelledby="byc-h"><div class="ph"><h2 id="byc-h">By client</h2></div><ul class="byc">${cs.map(c=>
+  `<li><a href="${cref(c.id)}">${esc(c.name)}</a> <span class="un">u/${esc(c.username)}</span><div class="bcc">${K3.map(k=>cell(c,k)).join('')}</div>${notes(c,{state:'none'})}</li>`).join('')}</ul></section>`:'')}
+function cell(c,k){const old=olderFiles(c.id,k),f=slotFile(c.id,k)||old.shift();let cls,ic,lab,meta;
+ if(f){const r=redo(f);cls=r?'warn':'ready';ic=r?'alert':'upload';lab=r?'Download again':'Ready';meta=r?'see the note below':f.summary||''}
+ else{const d=c.last&&c.last[k],n=d?daysAgo(d):0;cls=d?'done':'never';ic=d?'done':'circle';lab=d?'Last: '+dayLabel(d):'Never';meta=n>1?n+' days ago':d?'':'No upload yet'}
+ if(old.length)meta+=` · +${plural(old.length,'older download')}`;
+ return `<div class="cell ${cls}"><span class="lab">${KINDS[k]}</span>${I(ic)}<span><span class="cl">${esc(lab)}</span>${meta?`<span class="cm">${esc(meta)}</span>`:''}</span></div>`}
+function notes(c,sh){const out=[],r=c.comment_reach;
+ for(const k of K3){const f=slotFile(c.id,k);if(!f)continue;
+  for(const w of f.warnings||[])out.push([w.level==='redo'?'warn':'info',`${KINDS[k]}: ${w.text}`]);if(f.evidence)out.push(['info',`${KINDS[k]}: ${f.evidence}`])}
+ if(r!=null&&r<30&&!slotFile(c.id,'comment'))out.push(['info',`Comments only reach back ${r} days: upload again within ${r} days to keep every one.`]);
+ if(sh.state==='problem'&&sh.message)out.push(['bad','Google Sheet: '+sh.message]);
+ return out.length?`<ul class="notes">${out.map(([k,t])=>`<li class="${k}-t">${I(k==='info'?'info':'alert')}<span>${esc(t)}</span></li>`).join('')}</ul>`:''}
+function nextStep(c,k){const f=slotFile(c.id,k)||olderFiles(c.id,k)[0],d=c.last&&c.last[k],up=`<a href="${href('upload')}">Upload reports</a>`;
+ if(c.paused)return 'Paused: new files are set aside until you resume.';
+ if(f)return redo(f)?`Download this report again, then drop it on ${up}.`:'Ready: press Import at the bottom of the page.';
+ if(!d)return `Download the ${KINDS[k]} report from Reddit Pro and drop it on ${up}.`;
+ return daysAgo(d)>=DUE?`Time for a new one: drop a fresh download on ${up}.`:'Nothing to do yet. Drop a new download any time.'}
+function chooseHint(){return 'Google will ask you to allow access again, then show your Sheets.'+(S.app.remote?' Choose Sheet uses the same copy-and-paste step.':'')}
+function sheetStart(t){if(!S.google.configured)return `<span class="cm">${NO(S.google)}.</span>`;
+ const c=B('choosesheet','Choose Sheet',t),n=B('newsheet',I('plus')+'Make a new Sheet',t);return S.app.remote?n+c:c+n}
+function fixBtn(t,sh){switch(sh.fix){
+ case 'choose':return sh.id?B('choosesheet','Choose Sheet again',t,'sm',` data-file="${esc(sh.id)}"`)+B('choosesheet','Choose a different Sheet',t,'sm link'):B('choosesheet','Choose Sheet',t);
+ case 'signin':return S.google.configured?B('signin','Sign in again'):'';case 'retry':return B('check','Try again',t);case 'replace':return B('usesheet',"Keep the Sheet's numbers",t,'sm primary')+B('replace',"Use this computer's numbers",t,'sm caution');
+ case 'new':return B('newsheet','Make a new Sheet',t);default:return ''}}
+function sheetCell(t,sh){if(!sh||!sh.id||sh.state==='none')return `<span class="cm">No Sheet yet</span><span class="acts">${sheetStart(t)}</span>`;
+ const open=sh.url?A(sh.url,'Open Sheet'):'',fix=fixBtn(t,sh),acts=fix?`<span class="acts">${fix}</span>`:'';
+ if(sh.state==='ok')return `<span class="st s-ok">${I('done')}Up to date</span>`+open+(sh.updated_at?`<span class="cm">updated ${esc(when(sh.updated_at))}</span>`:'');
+ if(sh.state==='writing')return `<span class="busy">${SPIN}Updating…</span>`;
+ if(sh.state==='waiting')return open+`<span class="cm">${esc(sh.fix==='signin'&&!S.google.configured?NO(S.google)+'.':sh.message||'Not filled yet')}</span>`+acts;
+ return `<b class="bad-t">${I('alert')} Not updated</b>${open+acts}`}
+const RHELP="Makes your own copy of the report, filled with this client's Sheet.";
+function reportBtn(c){const r=c.sheet&&c.sheet.report;if(!r)return '';const l=I('chart')+'Connect a Data Studio report';
+ return `<div class="rep">${r.url?A(r.url,l,'btn'):B('report',l,c.id,'')}<p class="help">${RHELP}</p></div>`}
+
+function renderClient(){const el=$('v-client');if(ui.view!=='client')return;const c=client(ui.cid);
+ if(!c)return put(el,`<header class="vh"><div><h1 tabindex="-1">Client not found</h1><p class="lede">This client isn't here any more. <a href="${href('upload')}">Go to Upload reports</a>.</p></div></header>`);
+ const sh=c.sheet||{state:'none'},[k,ic,w]=cstat(c),ci=c.id;
+ let h=`<header class="vh"><div><p class="crumb">Clients</p><h1 tabindex="-1">${esc(c.name)}</h1><p class="meta"><span class="un">u/${esc(c.username)}</span><span class="st s-${k}">${I(ic)}${w}</span></p></div>`+
+  `<div class="acts">${B('edit',I('edit')+'Edit',ci,'',` aria-label="Edit ${esc(c.name)}"`)}${c.paused?B('resume','Resume',ci,'primary'):B('pause',I('pause')+'Pause',ci,'')}</div></header>`;
+ if(c.paused)h+=`<div class="notice info">${I('pause')}<div><b>${esc(c.name)} is paused</b><p class="nb">Their files are set aside and their Sheet doesn't update until you resume.</p></div></div>`;
+ h+=`<section class="card" aria-labelledby="rep-h"><div class="ph"><h2 id="rep-h">Reports</h2><a class="btn sm" href="${href('upload')}">${I('upload')}Upload reports</a></div>`+
+  `<ul class="rl">${K3.map(k=>`<li>${cell(c,k)}<p class="nx">${nextStep(c,k)}</p></li>`).join('')}</ul>${notes(c,{state:'none'})}</section>`;
+ const more=sh.id?`<div class="acts more">${(sh.fix==='choose'?'':B('choosesheet','Choose another Sheet',ci,Q))+B('newsheet','Make a new Sheet',ci,Q)+B('stopsheet','Stop using this Sheet',ci,Q)}</div>`:'';
+ h+=`<section class="card" aria-labelledby="sh-h"><div class="ph"><h2 id="sh-h">Google Sheet</h2></div><div class="pad">`+(sh.id?`<p class="sht">${esc(sh.title||'Google Sheet')}</p>`:'')+
+  `<div class="shc">${sheetCell(ci,sh)}</div>`+(sh.state==='problem'&&sh.message?`<p class="small bad-t" style="margin-top:10px">${esc(sh.message)}</p>`:'')+
+  (sh.id?'':`<p class="help">${chooseHint()}</p>`)+more+reportBtn(c)+'</div></section>';
+ put(el,h)}
+
+function allRow(row){const as=S.all_sheet,has=as&&as.id;
+ return row('One Sheet with all clients',`<p>Optional, for Data Studio: every client's numbers together.</p>`+
+  (has?`<div class="shc">${sheetCell('all',as)}</div>`+(as.state==='problem'&&as.message?`<p class="small bad-t">${esc(as.message)}</p>`:''):`<p class="small muted">${chooseHint()}</p>`),
+  has?B('choosesheet','Choose another Sheet','all')+B('stopsheet','Stop using it','all',Q):sheetStart('all'))}
+function updText(){const j=S.sheets;return (j.running?`<p class="muted">Updating now: ${j.done} of ${j.total}.</p>`:j.finished_at?`<p class="muted">Last update: ${esc(when(j.finished_at))}.</p>`:'')+
+  (j.next_retry_at&&!j.running?`<p class="muted">Trying again by itself at ${esc(when(j.next_retry_at))}.</p>`:'')}
+const updOk=()=>S.google.signed_in&&cards().length&&!S.sheets.running?'':' disabled';
+const srow=(k,v,x)=>`<li class="srow"><div class="sk">${k}</div><div class="sv">${v}</div>${x?`<div class="sx">${x}</div>`:''}</li>`;
+function renderSheets(){if(ui.view!=='sheets')return;const g=S.google,pr=problems().length;
+ let h=`<header class="vh"><div><h1 tabindex="-1">Google Sheets</h1><p class="lede">Your Google Sheets update by themselves after every import.</p></div>`+
+  `<div class="acts">${B('update',pr?'Try again':'Update Google Sheets now','',pr?'primary':'',updOk())}</div></header>`;
+ if(g.configured&&!g.signed_in&&!signin)h+=`<div class="notice">${I('alert')}<div><b>${GS(g,'Not signed in to Google.')}</b><div class="ch">${B('signin',SI(g),'','sm primary')}</div></div></div>`;
+ else if(!g.configured)h+=`<div class="notice">${I('alert')}<div><p>${NOG(g)}</p></div></div>`;
+ const u=updText();if(u)h+=`<div class="card pad">${u}</div>`;
+ h+=`<section class="card" aria-labelledby="cs-h"><div class="ph"><h2 id="cs-h">Client Sheets</h2>${B('add',I('plus')+'Add client','','sm')}</div>`+
+  (S.clients.length?`<ul class="sl">${S.clients.map(c=>{const sh=c.sheet||{state:'none'};
+   return srow(`<a href="${cref(c.id)}">${esc(c.name)}</a>`,c.paused?`<span class="st s-pz">${I('pause')}Paused: not updating</span>`:
+    `<div class="shc">${sheetCell(c.id,sh)}</div>`+(sh.state==='problem'&&sh.message?`<p class="small bad-t">${esc(sh.message)}</p>`:''))}).join('')}</ul>`
+   :`<p class="empty">No clients yet. Add one for each Reddit account you look after.</p>`)+'</section>';
+ h+=`<section class="card" aria-label="All clients Sheet"><ul class="sl">${allRow(srow)}</ul></section>`;
+ put($('v-sheets'),h)}
+
+function renderSettings(){if(ui.view!=='settings')return;const g=S.google,a=S.app,R=S.report,row=srow;
+ const acct=row('Google account',`<p>${GS(g,'Not signed in.')}</p>`,
+  !g.configured?'':g.signed_in?B('signout','Sign out')+B('switch','Use a different account','',Q):B('signin',SI(g),'','sm primary'));
+ const tpl=R?row('Data Studio template',`<p>${!R.id?'Off':R.is_default?'Undecided Agency template':'Your own template'+(R.url?' '+A(R.url,'Open'):'')}</p>`+
+  `<p class="small muted">Used by the Connect a Data Studio report button on each client's page.</p>`,B('reptpl','Change')):'';
+ const upd=row('Updates',`<p>Your Google Sheets update by themselves after every import.</p>`+updText(),B('update','Update Google Sheets now','','sm',updOk()));
+ const dev=row('Use from other devices',a.network?`<p>Open a link on your phone or another computer on the same Wi-Fi. Keep it private.</p>`+
+  (a.links||[]).map(l=>`<div class="lnk"><input type="text" readonly value="${esc(l)}" aria-label="Link for other devices">${B('copy','Copy','','sm',` value="${esc(l)}"`)}</div>`).join('')
+  :`<p>Start Reddit Tracker with <code>--network</code>, or install it on a Raspberry Pi. The README shows how.</p>`,
+  a.network?B('newlink','Make a new link','',Q):'');
+ const data=row('Data folder',`<code>${esc(a.data_dir)}</code><p class="small muted">Everything Reddit Tracker saves is kept here. Version ${esc(a.version)}.</p>`);
+ put($('v-settings'),`<header class="vh"><div><h1 tabindex="-1">Settings</h1></div></header><section class="card" aria-label="Settings"><ul class="sl">${acct+tpl+allRow(row)+upd+dev+data}</ul></section>`)}
+
+function renderBar(){const b=$('bar');if(!S||S.settings_problem||needLink){b.hidden=true;return pad()}
+ const j=S.sheets,g=S.google,L=live(),rd=L.filter(f=>f.import),pr=problems();let ic='',t='',sub='',acts='',list='',pct=null;const P=(s,k)=>sub+=`<p class="bs${k?` ${k}-t`:''}">${esc(s)}</p>`;
+ if(busy){ic=SPIN;t=`Importing ${plural(rd.length,'file')}…`;P("Don't close this page yet.")}
+ else if(rd.length){ic=I('upload','rdy');t=`${plural(rd.length,'file')} ready`;
+  const r=rd.filter(redo).length,nd=L.filter(f=>NEEDS.includes(f.status)).length,nf=(plan.no_files||[]).map(client).filter(Boolean);
+  if(importErr)P(importErr,'bad');
+  if(r)P(`${plural(r,'file')} should be downloaded again first (see the client's row on Upload reports).`,'warn');
+  if(nd)P(`${plural(nd,'file')} still need${nd===1?'s':''} you (on Upload reports).`);
+  if(nf.length)P(`${nf.length<3?nf.map(c=>c.name).join(' and '):nf[0].name+' and '+(nf.length-1)+' others'} ${nf.length===1?'has':'have'} no files yet. Import these now and add theirs later.`);
+  if(!g.signed_in)P(g.configured?"You're not signed in to Google: your Sheets update after you sign in.":NO(g)+', so the numbers stay in Reddit Tracker.');
+  acts=B('import',I('upload')+'<span>Import<span class="wide"> &amp; update Sheets</span></span>','','primary lg',checking?' disabled':'')}
+ else if(j.running){ic=SPIN;t=`Updating Google Sheets ${j.done} of ${j.total}…`;P('You can close this page.');pct=j.total?Math.max(4,100*j.done/j.total):4}
+ else if((pr.length||j.next_retry_at&&cards().some(x=>x[1].state==='waiting'))&&!barHide&&(ended||j.pending)){ic=I('alert','bad-t');t="Some Sheets weren't updated";
+  const nu=cards().filter(x=>x[1].message);list=`<ul>${nu.map(([n,sh])=>`<li><b>${esc(n)}</b>: ${esc(sh.message)}</li>`).join('')}</ul>`;
+  P('Everything you imported is saved.'+(j.next_retry_at?` Trying again by itself at ${when(j.next_retry_at)}.`:''));
+  acts=(nu.some(x=>x[1].fix==='retry'||x[1].state==='waiting')?B('update','Try again','','sm',g.signed_in?'':' disabled'):'')+B('barx',I('x'),'',Q,' aria-label="Hide this message"')}
+ else if(ended&&!barHide&&!j.pending){ic=I('done','okc');t=`All Sheets are up to date · ${when(j.finished_at)}`}
+ b.hidden=!t;if(t){$('bprog').hidden=pct===null;$('bprog').style.width=pct+'%';
+  put($('barin'),`<div class="bm"><p class="bt">${ic}<span>${esc(t)}</span></p>${sub}${list}</div><div class="bx">${acts}</div>`)}
+ pad()}
+function pad(){const b=$('bar');$('main').style.paddingBottom=b.hidden?'':b.offsetHeight+24+'px'}
+if(window.ResizeObserver)new ResizeObserver(pad).observe($('bar'));
+
+async function sniff(f){try{const head=(await f.slice(0,2048).text()).split(/\r?\n/)[0];return /Date/.test(head)&&/(Post Published Date|Comment Published Date|Followers)/.test(head)}catch(e){return false}}
+async function addFiles(list){const notes=[];let other=0,added=0,dup=0,total=0;for(const x of files.values())total+=x.size;
+ for(const f of [...list].sort((a,b)=>b.lastModified-a.lastModified)){
+  if(/\.(xlsx|xls|numbers)$/i.test(f.name)){if(REPORTISH.test(f.name))notes.push(`“${f.name}” is a spreadsheet, not the CSV file Reddit gives you. Download the CSV again from Reddit Pro.`);else other++;continue}
+  if(!/\.csv$/i.test(f.name)){other++;continue}
+  if(f.size>20e6){if(REPORTISH.test(f.name))notes.push(`“${f.name}” is too big to be a Reddit Pro report.`);else other++;continue}
+  if([...files.values()].some(x=>x.name===f.name&&x.size===f.size&&x.modified===f.lastModified)){dup++;continue}
+  if(!await sniff(f)){other++;continue}
+  if(files.size>=200){notes.push('Only the 200 newest reports were taken. Drop the rest after importing these.');break}
+  if(total+f.size>35e6){notes.push("That's a lot to send at once, so only the newest files were taken. Drop the rest after importing these.");break}
+  total+=f.size;const id='f'+nextId++;files.set(id,{id,file:f,name:f.name,size:f.size,modified:f.lastModified||null,client:null,text:null});added++}
+ if(dup&&!added)notes.push(`${dup===1?'That file is':`These ${dup} files are`} already on this page.`);
+ if(other)notes.push(`${plural(other,'other file')} ${other===1?'was':'were'} left out (not Reddit Pro reports).`);
+ note=notes.join(' ');if(added&&!busy)schedulePreview();render()}
+function schedulePreview(){clearTimeout(previewT);previewT=setTimeout(preview,300)}
+async function preview(){if(busy)return;
+ if(!files.size){plan=null;checking=false;return render()}
+ const seq=++previewSeq;checking=true;render();
+ try{const body={files:await Promise.all([...files.values()].map(async f=>{if(f.text===null)f.text=await f.file.text();return{id:f.id,name:f.name,text:f.text,modified:f.modified,client:f.client}}))};
+  const p=await api('/api/files/preview',body);if(seq!==previewSeq)return;plan=p;checking=false;prevErr='';render()}
+ catch(e){if(seq===previewSeq){checking=false;prevErr=e.message;render()}}}
+async function doImport(){if(busy||!plan||checking)return;
+ const shown=plan,ready=shown.files.filter(f=>f.import&&files.has(f.id));if(!ready.length)return;
+ busy=true;importErr='';previewSeq++;clearTimeout(previewT);render();
+ try{const r=await api('/api/files/import',{files:ready.map(f=>{const x=files.get(f.id);return{id:f.id,name:x.name,text:x.text,modified:x.modified,client:x.client,expect:f.client}})});
+  for(const f of r.files)if(f.import||SETTLED.includes(f.status))files.delete(f.id);
+  for(const f of shown.files)if(SETTLED.includes(f.status))files.delete(f.id);
+  const failed=r.files.find(f=>f.status==='failed'),more=[],why=r.files.find(f=>!f.import&&f.message&&!SETTLED.includes(f.status));
+  if(failed)importErr=`“${failed.name}”: ${failed.message}`;
+  for(const f of r.files)for(const w of f.warnings||[])if(/^Saved, but/.test(w.text))more.push(`“${f.name}”: ${w.text}`);
+  if(SHEETS[r.sheets]&&(S.google.configured||r.sheets!=='not_signed_in'))more.push(SHEETS[r.sheets]);
+  receipt=r.imported?{at:new Date().toISOString(),n:r.imported,lines:r.receipt||[],more}:null;plan=null;
+  note=r.imported||failed?'':why?`Nothing was saved. “${why.name}”: ${why.message}`:`Nothing new was saved: ${ready.length===1?'that file was':'those files were'} already imported.`}
+ catch(e){importErr=e.message+' Press Import again: anything already saved is skipped.'}
+ busy=false;go('upload');await refresh();if(files.size)schedulePreview()}
+const canDrop=()=>S&&!S.settings_problem&&!needLink;let depth=0;
+addEventListener('dragenter',e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){depth++;if(canDrop())$('overlay').hidden=false}});
+addEventListener('dragleave',()=>{if(--depth<=0){depth=0;$('overlay').hidden=true}});
+addEventListener('dragover',e=>e.preventDefault());
+addEventListener('drop',e=>{e.preventDefault();depth=0;$('overlay').hidden=true;if(!canDrop())return;go('upload');const it=[...(e.dataTransfer.items||[])],dir=i=>i.webkitGetAsEntry&&(i.webkitGetAsEntry()||{}).isDirectory;
+ if(it.length&&it.every(dir)){note="That's a folder. Open it and drag the files themselves.";return render()}
+ addFiles(e.dataTransfer.files)});
+$('drop').onclick=e=>{if(!e.target.closest('button'))$('pick').click()};
+$('pick').onchange=e=>{addFiles(e.target.files);e.target.value=''};
+addEventListener('beforeunload',e=>{if(!DEMO&&(busy||[...files.keys()].some(id=>!plan||!SETTLED.includes((pfile(id)||{}).status)))){e.preventDefault();e.returnValue=''}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!DEMO)refresh()});
+addEventListener('keydown',e=>{if(e.key==='Escape'){hideToast();if(ui.menu){ui.menu=false;renderTop()}}});
+
+function startGoogle(purpose,target,fileId){after=null;
+ if(!S.google.configured)return toast(NO(S.google)+'. Settings explains why.','info');
+ let w=null;if(!DEMO){w=window.open('','_blank');if(w)w.opener=null}  // before any await (popup blocker)
+ signin={purpose,until:Date.now()+6e5,url:null};ui.menu=false;render();schedule();
+ api('/api/google/begin',{purpose,target:target||null,file_id:fileId||null}).then(r=>{if(w&&!w.closed)w.location.href=r.url;else if(signin){signin.url=r.url;render()}
+  if(S.app.remote&&signin)pasteDialog()})
+  .catch(e=>{if(w)w.close();signin=after=null;toast(e.message,'bad',0);render()})}
+// Data Studio: open the tab now (popup blocker), point it at the copy once the server has made it
+function openReport(id){const k='report'+id;if(acting.has(k))return;acting.add(k);
+ let w=null;if(!DEMO){w=window.open('','_blank');if(w)w.opener=null}
+ toast('Making your copy of the report…','info',0);
+ api('/api/report',{client:id}).then(r=>{hideToast();if(w&&!w.closed)w.location.href=r.url;else if(!DEMO)window.open(r.url,'_blank','noopener');else toast('Demo: the report would open in a new tab.','info')})
+  .catch(e=>{if(w)w.close();toast(e.message,'bad',0)}).finally(()=>{acting.delete(k);refresh()})}
+function reportDialog(){const R=S.report||{};
+ openDlg('report',form('Data Studio template',`<p>Each client's Connect a Data Studio report button makes a copy of this report.</p>`+
+  field('f-rep','Paste the link to your Data Studio report','Open the report in Data Studio and copy the address from the top of the browser.',R.id&&!R.is_default?R.url||'':'')+
+  `<div class="ch">${(R.is_default?'':B('repdef','Use the Undecided Agency template','','sm'))+(R.id?B('repoff','Turn off','',Q):'')}</div>`,'<button class="btn primary">Save</button>'),
+  ()=>{const v=$('f-rep').value.trim();if(!v){fieldMsg('f-rep','Paste the link first.','bad');return $('f-rep').focus()}setReport(v)})}
+async function setReport(link){if(pasting)return;pasting=1;
+ try{await api('/api/settings/report',{link});pasting=0;dlg.close();toast(link===null?'Using the Undecided Agency template.':link===''?'Data Studio reports are off.':'Saved your template.');refresh()}
+ catch(e){pasting=0;showErr(e,{link:'f-rep'})}}
+function newSheet(t){if(S.google.configured&&!S.google.signed_in){startGoogle('signin');after=()=>newSheet(t);return}
+ toast('Making a new Google Sheet…','info',0);act('/api/sheets/new',{target:t},r=>`Made “${r.sheet.title}”. Filling it now.`)}
+function pause(i,p){const n=client(i).name,all=p&&S.all_sheet&&S.all_sheet.id,
+ t=`their files are set aside${all?', their Sheet stops updating, and their rows leave the All clients Sheet until you resume':' and their Sheet stops updating'}.`,
+ go=()=>act('/api/clients/pause',{rev:S.rev,id:i,paused:p},p?`${n} is paused: ${t}`:`${n} is active again.`);
+ if(all)return confirmDlg(`Pause ${n}?`,'T'+t.slice(1),'Pause',go);if(dlg.open)dlg.close();go()}
+async function act(path,body,msg){const k=path+JSON.stringify(body);if(acting.has(k))return null;acting.add(k);let r=null;
+ try{r=await api(path,body);if(msg)toast(typeof msg==='function'?msg(r):msg)}catch(e){toast(e.message,'bad',0)}
+ try{await refresh()}finally{acting.delete(k)}return r}
+
+const dlg=$('dlg');
+function openDlg(kind,html,submit,mount){if(!dlg.open){const a=document.activeElement;opener={el:a,key:actKey(a)}}
+ dlg.dataset.kind=kind;dlg.innerHTML=html;dlgSubmit=submit||null;if(!dlg.open)dlg.showModal();if(mount)mount();
+ const f=dlg.querySelector('input:not([readonly])');if(f)f.focus()}
+dlg.addEventListener('submit',e=>{e.preventDefault();if(dlgSubmit)dlgSubmit()});
+dlg.addEventListener('close',()=>{dlgSubmit=null;const o=opener;opener=null;if(!o)return;
+ const el=o.el&&o.el.isConnected?o.el:o.key&&[...document.querySelectorAll('[data-act]')].find(x=>actKey(x)===o.key);if(el&&el.focus)el.focus({preventScroll:true})});
+const form=(title,body,ok)=>`<form><div class="db"><h2 id="dlg-t">${title}</h2>${body}</div><div class="dm"><p class="why" id="why"></p>${B('close','Cancel','','')}${ok}</div></form>`;
+function field(id,label,help,value='',extra=''){return `<div class="fld"><label for="${id}">${label}</label><input type="text" id="${id}" value="${esc(value)}" autocomplete="off" spellcheck="false" aria-describedby="${id}-m ${id}-h"${extra}>`+
+ `<span class="fm" id="${id}-m" aria-live="polite"></span>${help?`<span class="help" id="${id}-h">${help}</span>`:''}</div>`}
+function fieldMsg(id,text,kind){const m=$(id+'-m');if(!m)return false;m.className='fm'+(kind?' '+kind+'-t':'');m.textContent=text||'';$(id).setAttribute('aria-invalid',kind==='bad'&&!!text);return true}
+function showErr(e,map){const id=e.field&&map[e.field];if(id&&fieldMsg(id,e.message,'bad'))$(id).focus();else{const w=$('why');w.textContent=e.message;w.className='why bad-t'}
+ if(e.code==='stale'||e.code==='no_such_client')refresh()}
+function liveUser(input,same){const v=input.value,r=normUser(v);
+ fieldMsg(input.id,r.user?(r.user===same?'':`Reddit username: u/${r.user}`):v.trim().length>2?r.error:'',r.user?'ok':'bad');return r}
+function confirmDlg(title,text,ok,fn,caution){openDlg('confirm',form(esc(title),`<p>${esc(text)}</p>`,`<button class="btn ${caution?'caution':'primary'}">${esc(ok)}</button>`),()=>{dlg.close();fn()})}
+function addDialog(prefill){let named=false;
+ openDlg('add',form('Add a client',field('f-user','Reddit username or profile link','For example Acme_Jane or reddit.com/user/Acme_Jane',prefill)+
+  field('f-name','Name','How the client is shown here and in their Google Sheet.'),`<button class="btn primary">${I('plus')}Add client</button>`),async()=>{
+  const u=$('f-user').value,r=normUser(u);if(!r.user){fieldMsg('f-user',r.error||"Enter the client's Reddit username.",'bad');return $('f-user').focus()}
+  try{const res=await api('/api/clients/add',{rev:S.rev,username:u.trim(),name:$('f-name').value.trim()||null});added(res.client)}catch(e){showErr(e,{username:'f-user',name:'f-name'})}},()=>{
+  const u=$('f-user'),n=$('f-name'),upd=()=>{const r=liveUser(u);if(!named)n.value=r.user?r.user.replace(/[_-]+/g,' ').trim():''};
+  u.oninput=upd;n.oninput=()=>{named=!!n.value.trim()};if(prefill)upd()})}
+function added(c){refresh();
+ openDlg('added',`<div class="db"><div class="okh">${I('done','okc')}<h2 id="dlg-t">${esc(c.name)} is added</h2></div><p>Next, choose the Google Sheet for their numbers. You can also do this later from their page.</p>`+
+  `<div class="acts">${sheetStart(c.id)}</div><p class="help">${chooseHint()}</p></div><div class="dm">${B('close','Later','','')}</div>`)}
+function editDialog(id){const c=client(id);if(!c)return;const sh=c.sheet||{state:'none'},ci=c.id;
+ const user=c.username_locked?`<div class="fld"><span class="lbl">Reddit username</span><p class="rov">u/${esc(c.username)}</p><span class="help">Numbers are already saved for this account, so it can't change. To follow another account, add a new client.</span></div>`
+  :field('f-user','Reddit username','',c.username);
+ const sheet=`<div class="fld"><span class="lbl">Google Sheet</span><div class="shb">`+(sh.id?`<b>${esc(sh.title||'Google Sheet')}</b> ${sh.url?A(sh.url,'Open'):''}`+
+  `<div class="ch">${B('choosesheet','Choose another Sheet',ci)+B('newsheet','Make a new Sheet',ci)+B('stopsheet','Stop using this Sheet',ci,Q)}</div><p class="help">A Sheet you stop using keeps its last numbers.</p>`
+  :`No Sheet yet.<div class="ch">${sheetStart(ci)}</div><p class="help">${chooseHint()}</p>`)+'</div></div>';
+ const more=`<div class="fld"><span class="lbl">More</span><div class="ch"><a class="btn sm" href="/api/export.csv?client=${encodeURIComponent(ci)}&amp;tab=content" download>Download CSV</a>`+
+  B(c.paused?'resume':'pause',c.paused?'Resume':'Pause',ci)+B('remove',I('x')+'Remove client',ci,'sm caution')+'</div></div>';
+ const changes=()=>{const b={},n=$('f-name').value.trim(),u=$('f-user'),v=u&&u.value.trim();if(n&&n!==c.name)b.name=n;if(v&&v!==c.username)b.username=v;return Object.keys(b).length?b:null};
+ openDlg('edit',form('Edit '+esc(c.name),field('f-name','Name','',c.name)+user+sheet+more,'<button class="btn primary" id="f-ok" disabled>Save</button>'),async()=>{
+  const b=changes();if(!b)return dlg.close();const r=b.username&&normUser(b.username);if(r&&!r.user)return fieldMsg('f-user',r.error,'bad');
+  try{await api('/api/clients/update',{rev:S.rev,id:ci,...b});dlg.close();toast(`Saved ${b.name||c.name}.`);refresh()}catch(e){showErr(e,{username:'f-user',name:'f-name'})}},
+  ()=>dlg.querySelectorAll('input').forEach(i=>i.oninput=()=>{if(i.id==='f-user')liveUser(i,c.username);$('f-ok').disabled=!changes()}))}
+function pasteDialog(){const u=signin&&signin.url;openDlg('paste',form('Finish signing in',(u?`<p>${A(u,'Open Google sign-in','btn sm')}</p>`:'')+`<p>After you allow access, your browser shows an error page such as “This site can't be reached” or “Can't connect to the server”. That's expected. `+
+ `Click the address bar at the top of that page, select all of it, copy it, and paste it here:</p>${field('f-url','The whole address','','',' placeholder="http://127.0.0.1:8765/oauth?…"')}`,
+ '<button class="btn primary">Finish signing in</button>'),async()=>{const v=$('f-url').value.trim();if(!v)return fieldMsg('f-url','Paste the whole address first.','bad');
+ if(pasting)return;const before=lastAt;pasting=1;
+ try{const r=await api('/api/google/finish',{url:v});pasting=0;dlg.close();signin=null;await refresh();
+  if(lastAt===before){toast(r.picked_title?`Chose “${r.picked_title}”.`:"You're signed in with Google.");const a=after;after=null;if(a)a()}}
+ catch(e){pasting=0;fieldMsg('f-url',e.message,'bad');$('f-url').focus()}})}
+
+// data-id: a client id, file ids, or a Sheet target ('all' = the All clients Sheet)
+const ACTS={
+ signin:()=>startGoogle('signin'),
+ switch:()=>confirmDlg('Switch account?',"Switch to a different Google account? You'll need to choose each client's Sheet again.",'Switch account',()=>startGoogle('signin')),
+ signout:()=>confirmDlg('Sign out of Google?',"Sign out of Google on this computer? Your Sheets stay as they are. Sign in again with the same Google account to keep updating them. To remove Reddit Tracker's access completely, use myaccount.google.com/permissions.",
+  'Sign out',()=>act('/api/google/signout',{},'Signed out of Google.')),
+ menu:()=>{ui.menu=!ui.menu;renderTop()},
+ add:addDialog,addfrom:(i,v)=>addDialog(v),edit:editDialog,
+ choose:()=>$('pick').click(),
+ clear:()=>{files.clear();plan=null;note=prevErr=importErr='';previewSeq++;render()},
+ leave:i=>{for(const x of i.split(','))files.delete(x);schedulePreview();render()},
+ whose:(i,v)=>{files.get(i).client=v;schedulePreview()},
+ resume:i=>pause(i,false),pause:i=>pause(i,true),
+ remove:i=>{const c=client(i);confirmDlg(`Remove ${c.name}?`,`Their numbers stay saved on this computer and their Sheet keeps its last numbers. Add u/${c.username} again to carry on.`,
+  'Remove',()=>act('/api/clients/remove',{rev:S.rev,id:i},`Removed ${c.name}.`),true)},
+ choosesheet:(i,v,b)=>{if(dlg.open)dlg.close();startGoogle('pick',i,b.dataset.file)},
+ newsheet:i=>{if(dlg.open)dlg.close();newSheet(i)},
+ check:i=>act('/api/sheets/check',{target:i}),
+ usesheet:i=>confirmDlg("Keep the Sheet's numbers?","Reddit Tracker copies the numbers in this Sheet onto this computer, then keeps the Sheet up to date as usual. Nothing already on this computer is replaced.","Keep the Sheet's numbers",()=>act('/api/sheets/use-sheet',{target:i},"Copying the Sheet's numbers now.")),
+ replace:i=>confirmDlg("Use this computer's numbers?","Reddit Tracker overwrites the Sheet with only the numbers on this computer. Rows that are only in the Sheet are removed.","Use this computer's numbers",()=>act('/api/sheets/replace-anyway',{target:i},'Replacing the rows now.'),true),
+ stopsheet:i=>confirmDlg('Stop updating this Sheet?','It keeps its last numbers. You can choose it again later.','Stop using it',()=>act('/api/sheets/stop',{target:i},"That Sheet won't be updated any more.")),
+ update:()=>act('/api/sheets/update',{},r=>SHEETS[r.sheets]||SHEETS.started),
+ report:openReport,reptpl:reportDialog,repdef:()=>setReport(null),repoff:()=>setReport(''),
+ copy:(i,v,b)=>copy(v,b),
+ newlink:()=>confirmDlg('Make a new link?','The old link stops working. Open the new one on each device.','Make a new link',async()=>{const r=await act('/api/network/new-link',{},'Made a new link.');
+  if(r&&S.app.remote&&r.links&&r.links[0])location.href=r.links[0]}),
+ paste:pasteDialog,signincancel:()=>{signin=after=null;render()},recheck:preview,
+ restore:()=>act('/api/settings/restore',{},'Restored.'),
+ import:doImport,
+ receiptx:()=>{receipt=null;render()},barx:()=>{barHide=true;renderBar()},
+ paused:()=>{ui.paused=!ui.paused;renderNav(true)},
+ toastx:hideToast,close:()=>dlg.close()};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');
+ if(ui.menu&&!(b&&b.dataset.act==='menu')){ui.menu=false;renderTop()}
+ if(!b||b.disabled||!ACTS[b.dataset.act])return;e.preventDefault();ACTS[b.dataset.act](b.dataset.id||'',b.value||'',b)});
+
+// #demo=<state>: sample data, no server
+const DS='https://datastudio.google.com/reporting/';
+function demo(k){const D=n=>new Date(Date.now()-n*864e5).toLocaleDateString('en-CA'),T=m=>new Date(Date.now()-m*6e4).toISOString();
+ const sh=(n,state,o)=>({id:'s-'+n,title:'Reddit Tracker - '+n,url:'https://docs.google.com/',state,updated_at:T(42),report:{url:null},...o});
+ const cl=(n,o)=>{const u=n.replace(' ','_');return{id:u,name:n,username:u,last:{post:D(4),comment:D(4),account:D(5)},username_locked:true,sheet:sh(n,'ok'),...o}};
+ const s={app:{version:'1.0.0',data_dir:'~/Library/Application Support/Reddit Tracker'},google:{configured:true,signed_in:true,email:'agency@example.com'},
+  clients:[cl('Acme Jane',{comment_reach:21,sheet:sh('Acme Jane','ok',{report:{url:DS+'acme-demo'}})}),cl('Bolt Bikes',{last:{post:D(20),comment:D(20),account:D(21)}}),
+   cl('Cedar Cafe',{last:{},username_locked:false,sheet:{state:'none',fix:'choose',report:null}}),cl('Dune Divers',{paused:true})],
+  all_sheet:sh('All clients','ok',{report:undefined}),sheets:{finished_at:T(42)},report:{id:'demo-template',url:DS+'demo-template',is_default:true}},g=s.google,c=s.clients;
+ if(k==='firstrun'){g.signed_in=false;s.clients=[];s.all_sheet=null;s.first_run=true}
+ if(k==='signedout'){Object.assign(g,{signed_in:false,problem:'rejected'});s.sheets.pending=true;for(const x of c.slice(0,2))Object.assign(x.sheet,{state:'waiting',fix:'signin',message:'Waiting for you to sign in again.'})}
+ if(k==='problems'){c.splice(3,0,cl('Elm Eats'),cl('Fern Farm'));s.sheets={pending:true,next_retry_at:T(-5)};s.all_sheet.state='waiting';s.report={id:'own',url:DS+'own-demo',is_default:false};
+  ["not_found choose Reddit Tracker can't open this Sheet any more.",'shrink replace This Sheet has more rows than Reddit Tracker.',"offline retry There's no internet connection.",'too_big new This Sheet is full.','shared - Another client uses this Sheet too.']
+   .forEach((x,i)=>{const[code,fix,...m]=x.split(' ');c[i].sheet=sh(c[i].name,'problem',{code,fix:fix==='-'?null:fix,message:m.join(' ')})})}
+ if(k==='running'){s.sheets={running:true,done:2,total:4};c[1].sheet.state='writing';c[2].sheet=sh('Cedar Cafe','waiting',{updated_at:null})}
+ if(k==='remote'){Object.assign(s.app,{remote:true,network:true,links:['http://raspberrypi.local:8765/?key=demo-key']});g.signed_in=false;s.report={id:null,url:null,is_default:false}}
+ if(k==='broken')s.settings_problem={message:'The settings file is damaged.',backup:'backups/settings.last-saved.json'};
+ return s}
+const DEMO_FILES=[['Acme_Jane','ready','Acme_Jane','post','38 posts, downloaded today'],
+ ['Acme_Jane','ready','Acme_Jane','comment','100 comments, from 19 Oct',{warnings:[{level:'note',text:'Only reaches back 21 days.'}]}],
+ ['Bolt_Bikes','ready','Bolt_Bikes','post','24 posts, downloaded today',{warnings:[{level:'redo',text:'Sorted by Top: set it to New and download again.'}]}],
+ ['export (2).csv','needs_client',0,'post',"Its name doesn't say which client it's for.",{guess:{client:'Cedar_Cafe',name:'Cedar Cafe',matched:12,of:14}}],
+ ['Acme_Jane','name_mismatch',0,'comment',"Its comments are Bolt Bikes's.",{guess:{client:'Bolt_Bikes',name:'Bolt Bikes'}}],
+ ['Elm_Eats','new_client',0,'post','',{new_username:'Elm_Eats'}],['Dune_Divers','paused',0,'post','',{paused_client:'Dune_Divers'}],
+ ['Bolt_Bikes','cant_use',0,'account','It was opened in Excel. Download it again.'],['Acme_Jane','already',0,'post','Already imported.']]
+ .map(([u,...x],i)=>[u.includes('.')?u:`${u} ${{post:'Post Insights',comment:'Comment Insights',account:'Account Performance'}[x[2]]} Report${i===4||i===8?' (1)':''}.csv`,...x]);
+function demoPlan(picks={}){const sl={},fs=DEMO_FILES.map(([name,status,c,report,txt,x],i)=>{const id='f'+i,p=picks[id],ok=status==='ready'||!!p;
+  return{id,name,status:p?'ready':status,import:ok,client:p||c,report,summary:ok?txt:'',message:ok?null:txt,...x}}).filter(f=>files.has(f.id));
+ for(const c of S.clients)if(!c.paused)sl[c.id]={};for(const f of fs)if(f.import)sl[f.client][f.report]=f.id;
+ return{files:fs,slots:sl,no_files:Object.keys(sl).filter(id=>!K3.some(k=>sl[id][k]))}}
+async function demoApi(path,body){await new Promise(r=>setTimeout(r,120));const p={};
+ if(path==='/api/files/preview'){for(const f of body.files)if(f.client)p[f.id]=f.client;return demoPlan(p)}
+ if(path==='/api/files/import')return{files:body.files.map(f=>({...f,status:'ready',import:true})),imported:body.files.length,receipt:[{name:'Acme Jane',lines:['38 posts (2 new)','Account numbers up to yesterday']}],sheets:'started'};
+ if(path==='/api/report'){const url=DS+'create?c.reportId=demo',c=client(body.client);if(c&&c.sheet&&c.sheet.report)c.sheet.report.url=url;return{url}}
+ if(path==='/api/settings/report'){const l=body.link;S.report=l===null?{id:'demo-template',url:DS+'demo-template',is_default:true}:l===''?{id:null,url:null,is_default:false}:{id:'own',url:l,is_default:false};return{report:S.report}}
+ return path==='/api/status'?S:{client:{id:'new',name:body.name||body.username},sheets:'started',sheet:{title:'Reddit Tracker - Demo'}}}
+if(DEMO){S=demo(DEMO);lastAt=null;lastFin=S.sheets.finished_at;
+ if(DEMO==='dropped'){DEMO_FILES.forEach((x,i)=>files.set('f'+i,{id:'f'+i,name:x[0],size:9,client:null,text:''}));plan=demoPlan()}
+ render();if(DEMO==='remote')ACTS.signin()}
+else refresh();
+</script>
+</body></html>

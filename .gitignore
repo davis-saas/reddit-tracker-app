@@ -1,0 +1,18 @@
+# Google keys: never in the public repo
+google_app.json
+client_secret*.json
+# Reddit Tracker's data files, wherever a --data folder is (they hold clients and numbers)
+settings*.json
+google_token.json
+reddit.db*
+sheets_status.json
+log*.txt
+backups/
+uploads/
+.*.tmp
+.data/
+# Build and Python leftovers
+dist/
+__pycache__/
+*.pyc
+.DS_Store
