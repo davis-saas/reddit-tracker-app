@@ -3,7 +3,7 @@ rem Double-click this file to start Reddit Tracker on Windows.
 cd /d "%~dp0"
 
 if not exist "reddit_tracker.py" (
-  echo Unzip the whole folder first: right-click the zip, choose Extract All..., then open the new folder, then the reddit-tracker-app folder inside it, and double-click start-windows.bat.
+  echo Unzip the whole folder first: right-click the zip, choose Extract All..., then open the new folder, then the reddit-tracker-app-main folder inside it, and double-click start-windows.bat.
   pause
   exit /b 1
 )

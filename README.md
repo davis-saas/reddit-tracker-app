@@ -1,16 +1,72 @@
 # Reddit Tracker
 
-Reddit Tracker keeps each client's **Reddit Pro numbers up to date in Google Sheets**.
+**Drop your clients' Reddit Pro reports in. Their Google Sheets fill themselves.** Free. Works on Mac,
+Windows and Raspberry Pi.
 
-You drop the three files Reddit Pro gives you (Posts, Comments, Account). Reddit Tracker saves dated
-copies of the numbers on your computer, removes duplicates, and fills each client's Google Sheet with the
-newest views, upvote rate, replies, shares and awards, plus each post's views after 7, 14 and 30 days.
-It's free, and it runs on a Mac, a Windows PC, Linux or a Raspberry Pi.
+## 1. Download
 
-**Contents:** [Privacy](#privacy) · [Install and start](#install-and-start) ·
-[First use](#first-use) · [What's in the Sheet](#whats-in-the-sheet) · [How often to upload](#how-often-to-upload) ·
-[Updating](#updating-to-a-new-version) · [Troubleshooting](#troubleshooting) ·
-[For the person who publishes this app](#for-the-person-who-publishes-this-app) · [For developers](#for-developers)
+### 👉 [Download Reddit Tracker](https://github.com/davis-saas/reddit-tracker-app/archive/refs/heads/main.zip)
+
+Unzip it. You get a folder called `reddit-tracker-app-main`. Put it anywhere (Documents is fine).
+
+## 2. Start it
+
+**Mac:** open the folder, double-click **start-mac.command**.
+- Mac says it can't check the file? Click **Done**, open **System Settings → Privacy & Security**, scroll
+  down, click **Open Anyway**. Only the first time.
+- Mac asks to install developer tools? Click **Install**, wait, then double-click the file again.
+
+**Windows:** right-click the zip → **Extract All**. Open the folder, double-click **start-windows.bat**.
+- "Windows protected your PC"? Click **More info → Run anyway**.
+- It says you need Python? Get it from [python.org/downloads](https://www.python.org/downloads/), and on the
+  first screen of the installer **tick "Add python.exe to PATH"**. Then double-click the file again.
+
+**Raspberry Pi:** open a terminal and paste this one line:
+
+```
+cd ~ && curl -L -o reddit-tracker.zip https://github.com/davis-saas/reddit-tracker-app/archive/refs/heads/main.zip && unzip -oq reddit-tracker.zip && mkdir -p reddit-tracker-app && cp -R reddit-tracker-app-main/. reddit-tracker-app/ && rm -rf reddit-tracker-app-main reddit-tracker.zip && bash reddit-tracker-app/install-raspberry-pi.sh
+```
+
+It prints a link. Open it on your laptop or phone and bookmark it. ([More about the Raspberry Pi](#raspberry-pi-details))
+
+Reddit Tracker opens in your browser. **Keep its small window open while you use it.** If the page doesn't
+open, go to <http://127.0.0.1:8765>.
+
+## 3. Use it
+
+1. Click **Sign in with Google**, then **Allow**.
+2. Click **Add client** and type their Reddit username.
+3. Click **Make a new Sheet**.
+4. Download the client's 3 reports from Reddit Pro (below), drop them on the page, and click
+   **Import & update Sheets**.
+
+Done. Do step 4 again whenever you want fresh numbers.
+
+## How to download the reports from Reddit Pro
+
+Log in to Reddit as the client. In the left menu, under **REDDIT PRO**, click **Performance**. Then:
+
+| Tab | Set this | Click |
+|---|---|---|
+| **Posts** | sort: **New** | **Download CSV** |
+| **Comments** | sort: **New** | **Download CSV** |
+| **Account** | **Past Year** | **Download CSV** |
+
+Don't open the files in Excel or Numbers first. Just drop them on Reddit Tracker. You can drop files for
+many clients at once: it works out whose file is whose and asks only when it can't tell.
+
+**Tip:** Reddit's Comments file only has the newest 100 comments. For busy accounts, upload at least every
+couple of weeks (the app tells you when).
+
+**Bonus:** on a client's page, **Connect a Data Studio report** makes your own ready-made report for that
+client ([more](#a-ready-made-data-studio-report-for-each-client)).
+
+---
+
+**Everything else:** [Privacy](#privacy) · [Raspberry Pi details](#raspberry-pi-details) ·
+[What's in the Sheet](#whats-in-the-sheet) · [Updating](#updating-to-a-new-version) ·
+[Troubleshooting](#troubleshooting) · [For the person who publishes this app](#for-the-person-who-publishes-this-app) ·
+[For developers](#for-developers)
 
 ---
 
@@ -25,72 +81,18 @@ It's free, and it runs on a Mac, a Windows PC, Linux or a Raspberry Pi.
 
 ---
 
-## Install and start
+## Raspberry Pi details
 
-Download the zip file and unzip it. You get a folder called `reddit-tracker-app`. Keep the whole folder
-together; you can put it anywhere (your Documents folder is fine).
-
-Reddit Tracker opens in your web browser. **Keep its small window open while you use it.** Close the window
-to stop it.
-
-### Mac
-
-1. Double-click the zip to unzip it.
-2. Open the `reddit-tracker-app` folder and double-click **start-mac.command**.
-3. The first time, macOS may say it can't check the file ("Apple could not verify…"). Click **Done**, then:
-   - open **System Settings → Privacy & Security**,
-   - scroll down to *"start-mac.command" was blocked*,
-   - click **Open Anyway**, type your Mac password, then click **Open**.
-
-   You only do this once.
-4. If a box asks to install developer tools (for Python 3), click **Install**, wait until it's done, then
-   double-click **start-mac.command** again. If it says this Mac's Python is too old, install the newest
-   Python from [python.org/downloads](https://www.python.org/downloads/), then double-click it again.
-
-Your browser opens Reddit Tracker. If it doesn't, open <http://127.0.0.1:8765>.
-
-### Windows
-
-1. Right-click the zip and choose **Extract All…**, then **Extract**. (Don't run it from inside the zip.)
-2. Windows opens the new folder. Open the **reddit-tracker-app** folder inside it, then double-click
-   **start-windows.bat**.
-3. If Windows says *"Windows protected your PC"*, click **More info**, then **Run anyway**.
-4. If it says Reddit Tracker needs Python 3.9 or newer:
-   - go to [python.org/downloads](https://www.python.org/downloads/) and download Python,
-   - run the installer and **tick "Add python.exe to PATH"** at the bottom of the first screen,
-   - click **Install Now**, then double-click **start-windows.bat** again.
-
-### Linux
-
-Open a terminal in the `reddit-tracker-app` folder and run:
-
-```
-bash start-linux.sh
-```
-
-(You need Python 3.9 or newer. Most Linux systems already have it. If it says your Python is too old,
-upgrade to a newer version of your Linux.)
-
-### Raspberry Pi (runs all the time, use it from your laptop or phone)
-
-You need Raspberry Pi OS Bullseye or newer (from 2021 on). On the Raspberry Pi, open a terminal (or connect
-with SSH) and paste this one line:
-
-```
-cd ~ && curl -L -o reddit-tracker.zip DOWNLOAD-LINK && unzip -o reddit-tracker.zip && bash reddit-tracker-app/install-raspberry-pi.sh
-```
-
-(If it says `unzip: command not found`, run `sudo apt install unzip` and paste the line again.)
-
+- You need Raspberry Pi OS Bullseye or newer (from 2021 on).
+- If it says `unzip: command not found`, run `sudo apt install unzip` and paste the line again.
 - Type your Raspberry Pi password if asked. Nothing shows while you type; that's normal.
-- At the end it prints a link like `http://raspberrypi.local:8765/?key=…`.
-- **Open that link on your laptop or phone and bookmark it.** Any device on the same network can use it.
-  Keep the link private: it's the key.
-- Reddit Tracker now starts by itself whenever the Raspberry Pi starts. Don't move or delete the
+- The link looks like `http://raspberrypi.local:8765/?key=…`. Any device on the same network can use it.
+  Keep it private: it's the key.
+- Reddit Tracker starts by itself whenever the Raspberry Pi starts. Don't move or delete the
   `reddit-tracker-app` folder.
-- If it says **Reddit Tracker is already open on this Raspberry Pi**, close the Reddit Tracker window on the
-  Raspberry Pi's screen, then paste the line again.
-- If it says **the system is too old**, put the newest Raspberry Pi OS on the memory card with
+- **Reddit Tracker is already open on this Raspberry Pi**: close the Reddit Tracker window on the Raspberry
+  Pi's screen, then paste the line again.
+- **The system is too old**: put the newest Raspberry Pi OS on the memory card with
   [Raspberry Pi Imager](https://www.raspberrypi.com/software/) (this erases the card), then paste the line again.
 
 Lost the link? On the Raspberry Pi, run:
@@ -113,9 +115,9 @@ Choosing a Sheet from a laptop or phone uses the same step. Making a new Sheet d
 
 To stop the Raspberry Pi service (your clients and numbers stay): `bash ~/reddit-tracker-app/install-raspberry-pi.sh --uninstall`
 
-### Other options
+**Linux:** open a terminal in the folder and run `bash start-linux.sh` (needs Python 3.9 or newer).
 
-`python3 reddit_tracker.py` (on Windows: `py reddit_tracker.py`) also takes:
+**Other options.** `python3 reddit_tracker.py` (on Windows: `py reddit_tracker.py`) also takes:
 
 | Option | What it does |
 |---|---|
@@ -124,30 +126,6 @@ To stop the Raspberry Pi service (your clients and numbers stay): `bash ~/reddit
 | `--no-browser` | Don't open the browser. |
 | `--data FOLDER` | Keep settings and numbers in another folder. |
 | `--show-link` | Print the link for other devices, then stop. |
-
----
-
-## First use
-
-The **Getting started** box on the page walks you through it.
-
-1. **Sign in with Google.** Click **Allow** on Google's page. Reddit Tracker only asks to use the Sheets it
-   makes or you choose.
-2. **Add a client.** Type their Reddit username (for example `Acme_Jane`) or paste their profile link
-   (`reddit.com/user/Acme_Jane`).
-3. **Choose their Google Sheet.** Click **Make a new Sheet** (easiest), or **Choose Sheet** to pick one
-   you already have. You can also make one Sheet with **all** clients (Settings → *One Sheet with all
-   clients*), handy for Looker Studio.
-4. **Download the three reports from Reddit Pro.** Signed in to Reddit as the client, open
-   **Reddit Pro → Performance**:
-   - **Posts** tab: set the sort to **New**, then **Download CSV**.
-   - **Comments** tab: set the sort to **New**, then **Download CSV**.
-   - **Account** tab: choose **Past year**, then **Download CSV**.
-
-   Don't open the files in Excel or Numbers first. Saving them there changes the dates and numbers.
-5. **Drop the files on the page** (or click **Choose files**). Drop as many clients' files as you like at
-   once. Reddit Tracker works out whose file is whose and asks you only when it can't tell.
-6. Click **Import & update Sheets**. Your Sheets update a few seconds later.
 
 ---
 
@@ -176,7 +154,7 @@ own tabs if you want: Reddit Tracker never changes tabs it didn't make.
 **content_history** — every saved snapshot: `export_date`, `item_key`, `kind`, `account`, `posted_date`,
 `age_days`, `views`, `upvote_rate`, `replies`, `shares`, `awards`. Good for growth charts.
 
-**A ready-made Data Studio report for each client**
+### A ready-made Data Studio report for each client
 
 Open a client and click **Connect a Data Studio report**. Data Studio (Google's free report tool, once
 called Looker Studio) opens a copy of the Undecided Agency report, already filled with that client's Sheet.
@@ -187,7 +165,7 @@ To use your own report instead, build it on a Sheet made by Reddit Tracker (its 
 tab), share it as *Anyone with the link can view*, then paste its link in Settings → **Data Studio
 template**. You can also turn the button off there.
 
-**Looker Studio tips**
+### Data Studio tips
 
 - Add the Sheet as a Google Sheets data source and pick the tab you want.
 - Set `posted_date` (and `date`, `as_of`, `export_date`) to the **Date** type.
@@ -220,7 +198,7 @@ Your clients, Google sign-in and numbers live in your **data folder**, not in th
 So updating is easy: close Reddit Tracker, unzip the new version, and start it the same way. You can delete
 the old app folder. (The page shows the data folder under Settings.)
 
-On a Raspberry Pi, paste the same one line from [Raspberry Pi](#raspberry-pi-runs-all-the-time-use-it-from-your-laptop-or-phone)
+On a Raspberry Pi, paste the same one line from [Start it](#2-start-it)
 again. It replaces the app and restarts it; your data stays.
 
 ---
@@ -229,7 +207,7 @@ again. It replaces the app and restarts it; your data stays.
 
 | What you see | What to do |
 |---|---|
-| "Reddit Tracker needs Python" | Install Python 3.9 or newer (see [Install and start](#install-and-start)), then start it again. |
+| "Reddit Tracker needs Python" | Install Python 3.9 or newer (see [Start it](#2-start-it)), then start it again. |
 | "…Python is too old" or "the system is too old" | Mac or Windows: install the newest Python from python.org. Linux: upgrade to a newer version of your Linux. Raspberry Pi: put the newest Raspberry Pi OS on the memory card with Raspberry Pi Imager. |
 | The page doesn't open | Open <http://127.0.0.1:8765> yourself. If another program uses that port, Reddit Tracker picks the next one and shows the address in its window. |
 | "Reddit Tracker isn't answering" | Its window was closed or the computer slept. Start it again; your dropped files stay on the page. |
@@ -280,24 +258,16 @@ app is asking. That's `google_app.json`, which you make once and ship inside the
 Keep that Google client. If you delete it or reset its secret, every copy you already gave out stops
 working ("Google no longer accepts this copy of Reddit Tracker") until people download a new zip.
 
-### Making a release
+### The Google file is in this repo
 
-```
-bash make-release.sh
-```
+`google_app.json` is kept in this repo, so the **Download** link above gives a copy that works straight
+away. Google treats a Desktop app's key as not truly secret: it can't open anyone's data, and every person
+still signs in and clicks **Allow** themselves. If the key is ever misused, make a new client in Google
+Cloud (step 6 above), replace `google_app.json` here and push: new downloads use the new key. Keep the old
+client until people have updated, because deleting it stops their copies signing in.
 
-It builds `dist/reddit-tracker-<version>.zip` with the app folder **and** `google_app.json` inside, and
-checks that the start files can still run. It never uploads anything: publish the zip yourself (for example
-as a GitHub release).
-
-Before the first release, replace the two placeholders with your real addresses:
-
-- `DOWNLOAD-LINK` in this README (the Raspberry Pi line) → the zip's download address.
-- `README_URL` at the top of the script in `rt/page.html` → this README's address.
-
-**Never commit `google_app.json` to git.** It's in `.gitignore`, and `make-release.sh` refuses to build if
-git tracks it. (Google treats a Desktop app's secret as not truly secret, but keeping it out of public code
-stops others from using your project.)
+`bash make-release.sh` can still build a zip (`dist/reddit-tracker-<version>.zip`) if you'd rather hand out
+a fixed version.
 
 ---
 

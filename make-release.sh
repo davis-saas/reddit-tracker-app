@@ -11,9 +11,6 @@ SCRIPTS=(start-mac.command start-linux.sh install-raspberry-pi.sh)
 fail() { echo "$*" >&2; exit 1; }
 
 [ -f google_app.json ] || fail "google_app.json is missing. Make it in Google Cloud (README: 'For the person who publishes this app') and save it next to reddit_tracker.py."
-if git ls-files --error-unmatch google_app.json >/dev/null 2>&1; then
-  fail "google_app.json is tracked by git. Take it out first (git rm --cached google_app.json): it must never be committed."
-fi
 python3 - google_app.json <<'PY' || fail "google_app.json doesn't look like the file Google gives you for a Desktop app."
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as f:

@@ -1,5 +1,4 @@
-# Google keys: never in the public repo
-google_app.json
+# A Google download that isn't the app's own connection file (google_app.json is kept in the repo)
 client_secret*.json
 # Reddit Tracker's data files, wherever a --data folder is (they hold clients and numbers)
 settings*.json
