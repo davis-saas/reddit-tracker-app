@@ -161,10 +161,10 @@ def report_id_from(text) -> str:
 
 def report_link(template: str, sheet_id: str, content_tab: int, client_name: str) -> str:
     """Data Studio's Linking API: a copy of the template, its data source pointed at this Sheet's content tab.
-    The copy is made (and owned) by whoever opens it, with their own Google access to the Sheet."""
+    The copy is made (and owned) by whoever opens it, with their own Google access to the Sheet. Google leaves the
+    template's Analytics IDs out of the copy by default; spelling that out (r.keepMeasurementId=false) breaks the copy."""
     query = urllib.parse.urlencode([
         ("c.reportId", template), ("r.reportName", f"{client_name} | Reddit organic report"),
-        ("r.keepMeasurementId", "false"),  # never the template's Google Analytics: nobody else sees the copy's use
         ("ds.*.connector", "googleSheets"), ("ds.*.spreadsheetId", sheet_id),
         ("ds.*.worksheetId", str(content_tab)), ("ds.*.hasHeader", "true"), ("ds.*.refreshFields", "false")])
     return "https://datastudio.google.com/reporting/create?" + query

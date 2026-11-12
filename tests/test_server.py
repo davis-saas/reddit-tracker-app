@@ -409,7 +409,6 @@ class RouteTests(Base):
         self.assertEqual(link[:3], ("https", "datastudio.google.com", "/reporting/create"))
         q = dict(urllib.parse.parse_qsl(link.query))
         self.assertEqual(q, {"c.reportId": REPORT_TEMPLATE, "r.reportName": "Acme Jane | Reddit organic report",
-                             "r.keepMeasurementId": "false",
                              "ds.*.connector": "googleSheets", "ds.*.spreadsheetId": c["sheet"]["id"],
                              "ds.*.worksheetId": q["ds.*.worksheetId"], "ds.*.hasHeader": "true",
                              "ds.*.refreshFields": "false"})
